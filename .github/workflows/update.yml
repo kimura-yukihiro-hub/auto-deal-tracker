@@ -32,6 +32,9 @@ jobs:
       - name: Fetch feeds and build
         env:
           CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+          RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+          RAKUTEN_SITE_URL: ${{ secrets.RAKUTEN_SITE_URL }}
         run: python fetch_and_build.py
 
       - name: Commit and push if changed

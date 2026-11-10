@@ -7,6 +7,10 @@
 
 環境変数（任意）:
     CONTACT_EMAIL     : お問い合わせ欄に表示するメールアドレス
+    RAKUTEN_APP_ID    : 楽天ウェブサービスのアプリID（applicationId）
+    RAKUTEN_ACCESS_KEY: 楽天ウェブサービスのアクセスキー（accessKey）
+    RAKUTEN_SITE_URL  : 楽天アプリに登録した許可サイトURL（Referer/Origin として送信）
+    ※ RAKUTEN_APP_ID / RAKUTEN_ACCESS_KEY が未設定の場合、楽天ランキング欄は表示しない。
     MAX_ITEMS_PER_FEED: フィードごとの最大取得件数（既定: 8）
 
 アフィリエイト:
@@ -21,6 +25,7 @@ import html
 import os
 import re
 import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -57,6 +62,20 @@ CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "")
 MOSHIMO_RAKUTEN_PARAMS = {"a_id": "5891942", "p_id": "54", "pc_id": "54", "pl_id": "616"}
 MOSHIMO_CLICK_URL = "https://af.moshimo.com/af/c/click"
 MOSHIMO_IMPRESSION_URL = "https://i.moshimo.com/af/i/impression"
+
+# 楽天市場ランキングAPI（version: 2022-06-01）
+RAKUTEN_RANKING_ENDPOINT = "https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601"
+RAKUTEN_APP_ID = os.environ.get("RAKUTEN_APP_ID", "")
+RAKUTEN_ACCESS_KEY = os.environ.get("RAKUTEN_ACCESS_KEY", "")
+RAKUTEN_SITE_URL = os.environ.get("RAKUTEN_SITE_URL", "")
+RAKUTEN_GENRES: list[dict[str, str]] = [
+    {"id": "100026", "name": "パソコン・周辺機器"},
+    {"id": "564500", "name": "スマートフォン・タブレット"},
+    {"id": "211742", "name": "TV・オーディオ・カメラ"},
+    {"id": "562637", "name": "家電"},
+]
+RAKUTEN_ITEMS_PER_GENRE = 4
+RAKUTEN_REQUEST_INTERVAL = 1.2  # 秒。短時間の連続アクセスを避ける
 MAX_ITEMS_PER_FEED = int(os.environ.get("MAX_ITEMS_PER_FEED", "8"))
 SUMMARY_LENGTH = 120
 REQUEST_TIMEOUT = 15
@@ -184,6 +203,95 @@ def collect_items() -> list[Item]:
     return items
 
 
+@dataclass
+class Product:
+    rank: int
+    name: str
+    price: int
+    url: str
+    image: str
+    shop: str
+    review_average: float
+    review_count: int
+
+
+def _first_image(value) -> str:
+    """mediumImageUrls（文字列 or {"imageUrl": ...} の配列）から先頭画像を取り出し、拡大版にする。"""
+    if not value:
+        return ""
+    first = value[0]
+    url = first.get("imageUrl", "") if isinstance(first, dict) else str(first)
+    return re.sub(r"_ex=\d+x\d+", "_ex=300x300", url)
+
+
+def fetch_rakuten_ranking(genre_id: str) -> list[Product]:
+    params = {
+        "applicationId": RAKUTEN_APP_ID,
+        "accessKey": RAKUTEN_ACCESS_KEY,
+        "genreId": genre_id,
+        "format": "json",
+        "formatVersion": 2,
+        "elements": "rank,itemName,itemPrice,itemUrl,mediumImageUrls,shopName,reviewAverage,reviewCount",
+    }
+    headers = {"User-Agent": USER_AGENT}
+    if RAKUTEN_SITE_URL:
+        headers["Referer"] = RAKUTEN_SITE_URL
+        parsed = urlparse(RAKUTEN_SITE_URL)
+        headers["Origin"] = f"{parsed.scheme}://{parsed.netloc}"
+    try:
+        resp = requests.get(RAKUTEN_RANKING_ENDPOINT, params=params, headers=headers, timeout=REQUEST_TIMEOUT)
+    except requests.RequestException as exc:
+        print(f"[WARN] 楽天ランキング({genre_id}): 通信失敗 ({type(exc).__name__})", file=sys.stderr)
+        return []
+    if resp.status_code != 200:
+        # エラー本文には認証情報は含まれないため、原因調査用にそのまま出力する
+        print(f"[WARN] 楽天ランキング({genre_id}): HTTP {resp.status_code} {resp.text[:300]}", file=sys.stderr)
+        return []
+
+    try:
+        data = resp.json()
+    except ValueError:
+        print(f"[WARN] 楽天ランキング({genre_id}): JSON以外の応答", file=sys.stderr)
+        return []
+
+    products: list[Product] = []
+    for raw in data.get("Items", data.get("items", [])):
+        item = raw.get("Item", raw) if isinstance(raw, dict) else {}
+        url = item.get("itemUrl", "")
+        if not url:
+            continue
+        products.append(
+            Product(
+                rank=int(item.get("rank") or 0),
+                name=strip_html(item.get("itemName", "")),
+                price=int(item.get("itemPrice") or 0),
+                url=url,
+                image=_first_image(item.get("mediumImageUrls")),
+                shop=item.get("shopName", ""),
+                review_average=float(item.get("reviewAverage") or 0),
+                review_count=int(item.get("reviewCount") or 0),
+            )
+        )
+        if len(products) >= RAKUTEN_ITEMS_PER_GENRE:
+            break
+    return products
+
+
+def collect_rakuten_rankings() -> list[tuple[str, list[Product]]]:
+    if not (RAKUTEN_APP_ID and RAKUTEN_ACCESS_KEY):
+        print("[INFO] 楽天APIのキーが未設定のため、ランキング欄をスキップします")
+        return []
+    sections: list[tuple[str, list[Product]]] = []
+    for i, genre in enumerate(RAKUTEN_GENRES):
+        if i:
+            time.sleep(RAKUTEN_REQUEST_INTERVAL)
+        products = fetch_rakuten_ranking(genre["id"])
+        print(f"[INFO] 楽天ランキング {genre['name']}: {len(products)} 件取得")
+        if products:
+            sections.append((genre["name"], products))
+    return sections
+
+
 # ---------------------------------------------------------------------------
 # HTML 生成
 # ---------------------------------------------------------------------------
@@ -252,6 +360,41 @@ header p { margin: 6px 0 0; color: var(--muted); }
 }
 .btn:hover { background: var(--accent-hover); }
 .af-pixel { position: absolute; width: 1px; height: 1px; border: none; opacity: 0; pointer-events: none; }
+.section-title { display: flex; align-items: center; gap: 10px; margin: 32px 0 4px; font-size: 1.25rem; }
+.section-note { margin: 0 0 8px; font-size: .82rem; color: var(--muted); }
+.pr {
+  font-size: .7rem; font-weight: 700; padding: 2px 7px; border-radius: 4px;
+  border: 1px solid var(--muted); color: var(--muted); letter-spacing: .05em;
+}
+.ranking { margin-bottom: 8px; }
+.ranking h3 { margin: 18px 0 10px; font-size: .95rem; color: var(--text); }
+.products {
+  display: grid; gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+}
+@media (max-width: 480px) { .products { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.product {
+  position: relative; display: flex; flex-direction: column; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 12px; padding: 12px; box-shadow: var(--shadow);
+}
+.product .rank {
+  position: absolute; top: 8px; left: 8px; min-width: 28px; height: 28px; padding: 0 6px;
+  display: grid; place-items: center; border-radius: 999px; font-size: .8rem; font-weight: 700;
+  background: var(--accent); color: #fff;
+}
+.product .thumb {
+  aspect-ratio: 1; display: grid; place-items: center; background: #fff;
+  border-radius: 8px; overflow: hidden; margin-bottom: 10px;
+}
+.product .thumb img { width: 100%; height: 100%; object-fit: contain; }
+.product .name {
+  margin: 0 0 6px; font-size: .85rem; line-height: 1.45; color: var(--text);
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.product .price { font-size: 1.05rem; font-weight: 700; color: var(--tag-deal-text); }
+.product .sub { font-size: .75rem; color: var(--muted); margin: 2px 0 10px; overflow-wrap: anywhere; flex: 1; }
+.product .btn { align-self: stretch; text-align: center; padding: 8px 10px; font-size: .82rem; background: #bf0000; }
+.product .btn:hover { background: #990000; }
 .empty { text-align: center; color: var(--muted); padding: 60px 0; }
 footer {
   background: var(--surface); border-top: 1px solid var(--border);
@@ -315,7 +458,44 @@ def render_card(item: Item) -> str:
       </article>"""
 
 
-def render_page(items: list[Item]) -> str:
+def render_product(p: Product) -> str:
+    e = html.escape
+    review = f"★{p.review_average:.1f}（{p.review_count:,}件）・" if p.review_count else ""
+    image = (
+        f'<img src="{e(p.image)}" alt="{e(p.name[:60])}" loading="lazy" width="300" height="300">'
+        if p.image else ""
+    )
+    return f"""
+          <article class="product">
+            <span class="rank">{p.rank}</span>
+            <div class="thumb">{image}</div>
+            <p class="name">{e(p.name)}</p>
+            <div class="price">¥{p.price:,}</div>
+            <div class="sub">{review}{e(p.shop)}</div>
+            {render_link(p.url, "楽天市場で見る")}
+          </article>"""
+
+
+def render_rankings(sections: list[tuple[str, list[Product]]]) -> str:
+    if not sections:
+        return ""
+    e = html.escape
+    blocks = "".join(
+        f"""
+      <h3>{e(name)}</h3>
+      <div class="products">{"".join(render_product(p) for p in products)}
+      </div>"""
+        for name, products in sections
+    )
+    return f"""
+    <section class="ranking" aria-labelledby="ranking-title">
+      <h2 class="section-title" id="ranking-title">楽天市場 人気ランキング <span class="pr">PR</span></h2>
+      <p class="section-note">楽天市場のジャンル別デイリーランキング上位を毎朝自動更新。価格・在庫は変動するため、購入前にリンク先でご確認ください。</p>{blocks}
+    </section>
+    <h2 class="section-title">最新ニュース・セール速報</h2>"""
+
+
+def render_page(items: list[Item], rankings: list[tuple[str, list[Product]]] | None = None) -> str:
     e = html.escape
     now = datetime.now(JST).strftime("%Y年%m月%d日 %H:%M")
     categories = sorted({i.category for i in items})
@@ -352,7 +532,7 @@ def render_page(items: list[Item]) -> str:
       <div class="meta">最終更新: {now} (JST) ・ {len(items)} 件</div>
     </div>
   </header>
-  <main class="container">
+  <main class="container">{render_rankings(rankings or [])}
     <nav class="filters" aria-label="カテゴリ絞り込み">{filter_buttons}</nav>
     <section class="grid">{cards}
     </section>
@@ -395,7 +575,8 @@ def main() -> int:
         print("[ERROR] 1件も取得できませんでした。既存の index.html は更新しません。", file=sys.stderr)
         return 1
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_PATH.write_text(render_page(items), encoding="utf-8")
+    rankings = collect_rakuten_rankings()
+    OUTPUT_PATH.write_text(render_page(items, rankings), encoding="utf-8")
     print(f"[INFO] {OUTPUT_PATH} を生成しました（{len(items)} 件）")
     return 0
 
