@@ -6,9 +6,13 @@
     python fetch_and_build.py
 
 環境変数（任意）:
-    AFFILIATE_ID      : アフィリエイトID（未設定時はプレースホルダー YOUR_AFFILIATE_ID）
-    AFFILIATE_PARAM   : リンクに付与するクエリパラメータ名（既定: aff_id）
+    CONTACT_EMAIL     : お問い合わせ欄に表示するメールアドレス
     MAX_ITEMS_PER_FEED: フィードごとの最大取得件数（既定: 8）
+
+アフィリエイト:
+    リンク先が楽天市場（*.rakuten.co.jp）の場合のみ、もしもアフィリエイトの
+    「どこでもリンク」形式に変換し、インプレッション計測用の 1x1 ピクセルを付与する。
+    それ以外（ニュース記事など）は元の URL のままリンクする。
 """
 
 from __future__ import annotations
@@ -20,7 +24,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+from urllib.parse import quote, urlencode, urlparse
 
 import feedparser
 import requests
@@ -49,8 +53,10 @@ SITE_ABOUT = (
 OPERATOR_NAME = "Auto Deal Tracker 運営事務局"
 # 連絡先メールアドレス。設定すると「お問い合わせ」欄に mailto リンクを表示する。
 CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "")
-AFFILIATE_ID = os.environ.get("AFFILIATE_ID", "YOUR_AFFILIATE_ID")
-AFFILIATE_PARAM = os.environ.get("AFFILIATE_PARAM", "aff_id")
+# もしもアフィリエイト × 楽天市場「どこでもリンク」の本番パラメータ
+MOSHIMO_RAKUTEN_PARAMS = {"a_id": "5891942", "p_id": "54", "pc_id": "54", "pl_id": "616"}
+MOSHIMO_CLICK_URL = "https://af.moshimo.com/af/c/click"
+MOSHIMO_IMPRESSION_URL = "https://i.moshimo.com/af/i/impression"
 MAX_ITEMS_PER_FEED = int(os.environ.get("MAX_ITEMS_PER_FEED", "8"))
 SUMMARY_LENGTH = 120
 REQUEST_TIMEOUT = 15
@@ -96,14 +102,38 @@ def parse_date(entry) -> datetime | None:
     return None
 
 
-def build_affiliate_link(url: str) -> str:
-    """リンクにアフィリエイト用のクエリパラメータ（プレースホルダー）を付与する。"""
+def is_rakuten_ichiba_url(url: str) -> bool:
+    """楽天市場の URL か判定する（楽天の既存アフィリエイトリンク afl.rakuten.co.jp は除外）。"""
+    host = (urlparse(url).hostname or "").lower()
+    if not (host == "rakuten.co.jp" or host.endswith(".rakuten.co.jp")):
+        return False
+    return not (host == "afl.rakuten.co.jp" or host.endswith(".afl.rakuten.co.jp"))
+
+
+def build_moshimo_rakuten_link(url: str) -> str:
+    """楽天市場の URL を、もしもアフィリエイトの「どこでもリンク」に変換する。"""
+    query = urlencode(MOSHIMO_RAKUTEN_PARAMS)
+    return f"{MOSHIMO_CLICK_URL}?{query}&url={quote(url, safe='')}"
+
+
+def moshimo_rakuten_impression_url() -> str:
+    return f"{MOSHIMO_IMPRESSION_URL}?{urlencode(MOSHIMO_RAKUTEN_PARAMS)}"
+
+
+def render_link(url: str, label: str) -> str:
+    """カードのリンクボタンを生成する。楽天市場ならアフィリエイトリンク＋計測ピクセルを付与する。"""
+    e = html.escape
     if not url:
-        return "#"
-    parts = urlparse(url)
-    query = dict(parse_qsl(parts.query, keep_blank_values=True))
-    query[AFFILIATE_PARAM] = AFFILIATE_ID
-    return urlunparse(parts._replace(query=urlencode(query)))
+        return ""
+    if is_rakuten_ichiba_url(url):
+        return (
+            f'<a class="btn" href="{e(build_moshimo_rakuten_link(url))}" target="_blank" '
+            f'rel="nofollow sponsored noopener" referrerpolicy="no-referrer-when-downgrade" '
+            f'attributionsrc>{e(label)}</a>'
+            f'<img class="af-pixel" src="{e(moshimo_rakuten_impression_url())}" '
+            f'width="1" height="1" alt="" loading="lazy">'
+        )
+    return f'<a class="btn" href="{e(url)}" target="_blank" rel="noopener">{e(label)}</a>'
 
 
 def fetch_feed(feed: dict[str, str]) -> list[Item]:
@@ -221,6 +251,7 @@ header p { margin: 6px 0 0; color: var(--muted); }
   padding: 8px 16px; border-radius: 8px; font-size: .88rem; font-weight: 600;
 }
 .btn:hover { background: var(--accent-hover); }
+.af-pixel { position: absolute; width: 1px; height: 1px; border: none; opacity: 0; pointer-events: none; }
 .empty { text-align: center; color: var(--muted); padding: 60px 0; }
 footer {
   background: var(--surface); border-top: 1px solid var(--border);
@@ -280,7 +311,7 @@ def render_card(item: Item) -> str:
         </div>
         <h2>{e(item.title)}</h2>
         <p>{e(item.summary)}</p>
-        <a class="btn" href="{e(build_affiliate_link(item.link))}" target="_blank" rel="noopener sponsored nofollow">続きを読む →</a>
+        {render_link(item.link, "続きを読む →")}
       </article>"""
 
 

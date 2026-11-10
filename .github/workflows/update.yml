@@ -31,7 +31,6 @@ jobs:
 
       - name: Fetch feeds and build
         env:
-          AFFILIATE_ID: ${{ secrets.AFFILIATE_ID }}
           CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
         run: python fetch_and_build.py
 
