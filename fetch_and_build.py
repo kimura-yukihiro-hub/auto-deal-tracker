@@ -279,7 +279,7 @@ def render_page(items: list[Item]) -> str:
   <footer>
     <div class="container">
       <p>情報元: {sources}。各記事の著作権は配信元に帰属します。</p>
-      <p>※ 本ページのリンクにはアフィリエイトリンクが含まれる場合があります。</p>
+      <p>当サイトはアフィリエイト広告（Amazonアソシエイト含む）を掲載しています。Amazonのアソシエイトとして、当メディアは適格販売により収入を得ています。</p>
     </div>
   </footer>
   <script>{JS}</script>
