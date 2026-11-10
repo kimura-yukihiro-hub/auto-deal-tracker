@@ -36,6 +36,9 @@ FEEDS: list[dict[str, str]] = [
     {"name": "Hacker News", "category": "テック", "url": "https://hnrss.org/frontpage"},
     {"name": "ギズモード・ジャパン", "category": "ガジェット/セール", "url": "https://www.gizmodo.jp/index.xml"},
     {"name": "ITmedia Mobile", "category": "ガジェット/セール", "url": "https://rss.itmedia.co.jp/rss/2.0/mobile.xml"},
+    {"name": "PC Watch", "category": "ガジェット/セール", "url": "https://pc.watch.impress.co.jp/data/rss/1.0/pcw/feed.rdf"},
+    {"name": "AKIBA PC Hotline!", "category": "ガジェット/セール", "url": "https://akiba-pc.watch.impress.co.jp/data/rss/1.0/ah/feed.rdf"},
+    {"name": "GetNavi web", "category": "ガジェット/セール", "url": "https://getnavi.jp/feed/"},
 ]
 
 SITE_TITLE = "Auto Deal Tracker"
