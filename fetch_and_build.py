@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import html
+import json
 import os
 import re
 import sys
@@ -82,7 +83,14 @@ REQUEST_TIMEOUT = 15
 USER_AGENT = "Mozilla/5.0 (compatible; AutoDealTracker/1.0; +https://github.com/)"
 
 JST = timezone(timedelta(hours=9))
-OUTPUT_PATH = Path(__file__).resolve().parent / "dist" / "index.html"
+BASE_DIR = Path(__file__).resolve().parent
+OUTPUT_PATH = BASE_DIR / "dist" / "index.html"
+
+# 編集部ピックアップ（data/featured.json）。空・未設定なら自動ピックアップに切り替える
+FEATURED_PATH = BASE_DIR / "data" / "featured.json"
+MAX_FEATURED = 6
+FALLBACK_PICK_COUNT = 3
+FALLBACK_PICK_CATEGORY = "ガジェット/セール"
 
 
 # ---------------------------------------------------------------------------
@@ -201,6 +209,93 @@ def collect_items() -> list[Item]:
     oldest = datetime.min.replace(tzinfo=JST)
     items.sort(key=lambda i: i.published or oldest, reverse=True)
     return items
+
+
+@dataclass
+class Pick:
+    title: str
+    comment: str
+    url: str
+    manual: bool  # True: featured.json の手動登録 / False: 自動ピックアップ
+    image: str = ""
+    price: str = ""
+    label: str = ""
+    source: str = ""
+    date: str = ""
+
+
+def _format_price(value) -> str:
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return f"¥{int(value):,}"
+    return str(value or "").strip()
+
+
+def load_featured(path: Path | None = None) -> list[Pick]:
+    """data/featured.json から手動ピックアップを読み込む。不備があっても例外にせず空を返す。"""
+    path = path or FEATURED_PATH
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8") or "null")
+    except (OSError, ValueError) as exc:
+        print(f"[WARN] {path.name} を読み込めません。自動ピックアップに切り替えます ({exc})", file=sys.stderr)
+        return []
+    entries = data.get("items", []) if isinstance(data, dict) else data if isinstance(data, list) else []
+
+    today = datetime.now(JST).date()
+    picks: list[Pick] = []
+    for i, entry in enumerate(entries, 1):
+        if not isinstance(entry, dict):
+            continue
+        title = str(entry.get("title", "")).strip()
+        url = str(entry.get("url", "")).strip()
+        if not title or not url.startswith(("https://", "http://")):
+            print(f"[WARN] {path.name} の {i} 件目: title と url（http/https）が必須のためスキップ", file=sys.stderr)
+            continue
+        expires = str(entry.get("expires", "")).strip()
+        if expires:
+            try:
+                if datetime.strptime(expires, "%Y-%m-%d").date() < today:
+                    print(f"[INFO] {path.name} の「{title}」は掲載期限 {expires} を過ぎたため非表示")
+                    continue
+            except ValueError:
+                print(f"[WARN] {path.name} の {i} 件目: expires は YYYY-MM-DD 形式で指定してください", file=sys.stderr)
+        image = str(entry.get("image", "")).strip()
+        picks.append(
+            Pick(
+                title=title,
+                comment=str(entry.get("comment", "")).strip(),
+                url=url,
+                manual=True,
+                image=image if image.startswith("https://") else "",
+                price=_format_price(entry.get("price")),
+                label=str(entry.get("label", "")).strip() or "編集部おすすめ",
+            )
+        )
+    return picks[:MAX_FEATURED]
+
+
+def select_picks(items: list[Item]) -> list[Pick]:
+    """手動ピックアップがあれば優先し、なければ「ガジェット/セール」の最新記事から自動で選ぶ。"""
+    manual = load_featured()
+    if manual:
+        print(f"[INFO] 編集部ピックアップ: featured.json から {len(manual)} 件")
+        return manual
+    auto = [
+        Pick(
+            title=item.title,
+            comment=item.summary,
+            url=item.link,
+            manual=False,
+            label="自動ピックアップ",
+            source=item.source,
+            date=item.published.strftime("%m/%d %H:%M") if item.published else "",
+        )
+        for item in items
+        if item.category == FALLBACK_PICK_CATEGORY and item.link
+    ][:FALLBACK_PICK_COUNT]
+    print(f"[INFO] 編集部ピックアップ: featured.json が空のため自動で {len(auto)} 件")
+    return auto
 
 
 @dataclass
@@ -395,6 +490,32 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .product .sub { font-size: .75rem; color: var(--muted); margin: 2px 0 10px; overflow-wrap: anywhere; flex: 1; }
 .product .btn { align-self: stretch; text-align: center; padding: 8px 10px; font-size: .82rem; background: #bf0000; }
 .product .btn:hover { background: #990000; }
+.pickup { margin-top: 8px; }
+.pickups {
+  display: grid; gap: 16px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+.pick {
+  position: relative; display: flex; gap: 14px; background: var(--surface);
+  border: 1px solid var(--border); border-top: 4px solid var(--accent);
+  border-radius: 12px; padding: 16px; box-shadow: var(--shadow);
+}
+.pick.manual { border-top-color: #bf0000; }
+.pick .pick-img {
+  flex: 0 0 96px; height: 96px; border-radius: 8px; overflow: hidden; background: #fff;
+  display: grid; place-items: center;
+}
+.pick .pick-img img { width: 100%; height: 100%; object-fit: contain; }
+.pick .pick-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.pick .pick-label { font-size: .72rem; font-weight: 700; color: var(--accent); }
+.pick.manual .pick-label { color: #bf0000; }
+.pick h3 { margin: 4px 0 6px; font-size: 1rem; line-height: 1.45; overflow-wrap: anywhere; }
+.pick p { margin: 0 0 8px; font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; flex: 1; }
+.pick .pick-meta { font-size: .75rem; color: var(--muted); margin-bottom: 10px; }
+.pick .pick-price { font-size: 1.05rem; font-weight: 700; color: var(--tag-deal-text); margin-bottom: 10px; }
+.pick.manual .btn { background: #bf0000; }
+.pick.manual .btn:hover { background: #990000; }
+@media (max-width: 480px) { .pick .pick-img { flex-basis: 72px; height: 72px; } }
 .empty { text-align: center; color: var(--muted); padding: 60px 0; }
 footer {
   background: var(--surface); border-top: 1px solid var(--border);
@@ -476,6 +597,48 @@ def render_product(p: Product) -> str:
           </article>"""
 
 
+def render_pick(p: Pick) -> str:
+    e = html.escape
+    is_rakuten = is_rakuten_ichiba_url(p.url)
+    image = (
+        f'<div class="pick-img"><img src="{e(p.image)}" alt="" loading="lazy" width="96" height="96"></div>'
+        if p.image else ""
+    )
+    meta = " ・ ".join(x for x in (p.source, p.date) if x)
+    label = "楽天市場で見る" if is_rakuten else ("詳しく見る" if p.manual else "続きを読む →")
+    return f"""
+        <article class="pick{' manual' if p.manual else ''}">
+          {image}
+          <div class="pick-body">
+            <span class="pick-label">{e(p.label)}</span>
+            <h3>{e(p.title)}</h3>
+            {f'<p>{e(p.comment)}</p>' if p.comment else ''}
+            {f'<div class="pick-price">{e(p.price)}</div>' if p.price else ''}
+            {f'<div class="pick-meta">{e(meta)}</div>' if meta else ''}
+            {render_link(p.url, label)}
+          </div>
+        </article>"""
+
+
+def render_picks(picks: list[Pick]) -> str:
+    if not picks:
+        return ""
+    has_ad = any(is_rakuten_ichiba_url(p.url) for p in picks)
+    pr = ' <span class="pr">PR</span>' if has_ad else ""
+    note = (
+        "編集部が注目している商品・セールをピックアップしています。価格・在庫は変動するため、購入前にリンク先でご確認ください。"
+        if picks[0].manual
+        else "ガジェット・セール関連の最新記事から自動でピックアップしています。"
+    )
+    return f"""
+    <section class="pickup" aria-labelledby="pickup-title">
+      <h2 class="section-title" id="pickup-title">今週の注目・編集部ピックアップ{pr}</h2>
+      <p class="section-note">{html.escape(note)}</p>
+      <div class="pickups">{"".join(render_pick(p) for p in picks)}
+      </div>
+    </section>"""
+
+
 def render_rankings(sections: list[tuple[str, list[Product]]]) -> str:
     if not sections:
         return ""
@@ -491,11 +654,14 @@ def render_rankings(sections: list[tuple[str, list[Product]]]) -> str:
     <section class="ranking" aria-labelledby="ranking-title">
       <h2 class="section-title" id="ranking-title">楽天市場 人気ランキング <span class="pr">PR</span></h2>
       <p class="section-note">楽天市場のジャンル別デイリーランキング上位を毎朝自動更新。価格・在庫は変動するため、購入前にリンク先でご確認ください。</p>{blocks}
-    </section>
-    <h2 class="section-title">最新ニュース・セール速報</h2>"""
+    </section>"""
 
 
-def render_page(items: list[Item], rankings: list[tuple[str, list[Product]]] | None = None) -> str:
+def render_page(
+    items: list[Item],
+    rankings: list[tuple[str, list[Product]]] | None = None,
+    picks: list[Pick] | None = None,
+) -> str:
     e = html.escape
     now = datetime.now(JST).strftime("%Y年%m月%d日 %H:%M")
     categories = sorted({i.category for i in items})
@@ -512,6 +678,7 @@ def render_page(items: list[Item], rankings: list[tuple[str, list[Product]]] | N
     else:
         contact_html = "<p>お気づきの点や掲載停止のご連絡は、運営までお問い合わせください。</p>"
     year = datetime.now(JST).year
+    news_heading = '\n    <h2 class="section-title">最新ニュース・セール速報</h2>' if (picks or rankings) else ""
     about_html = e(SITE_ABOUT).replace(e(SITE_TITLE), "<strong>" + e(SITE_TITLE) + "</strong>", 1)
 
     return f"""<!DOCTYPE html>
@@ -532,7 +699,7 @@ def render_page(items: list[Item], rankings: list[tuple[str, list[Product]]] | N
       <div class="meta">最終更新: {now} (JST) ・ {len(items)} 件</div>
     </div>
   </header>
-  <main class="container">{render_rankings(rankings or [])}
+  <main class="container">{render_picks(picks or [])}{render_rankings(rankings or [])}{news_heading}
     <nav class="filters" aria-label="カテゴリ絞り込み">{filter_buttons}</nav>
     <section class="grid">{cards}
     </section>
@@ -576,7 +743,8 @@ def main() -> int:
         return 1
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     rankings = collect_rakuten_rankings()
-    OUTPUT_PATH.write_text(render_page(items, rankings), encoding="utf-8")
+    picks = select_picks(items)
+    OUTPUT_PATH.write_text(render_page(items, rankings, picks), encoding="utf-8")
     print(f"[INFO] {OUTPUT_PATH} を生成しました（{len(items)} 件）")
     return 0
 

@@ -104,6 +104,32 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .product .sub { font-size: .75rem; color: var(--muted); margin: 2px 0 10px; overflow-wrap: anywhere; flex: 1; }
 .product .btn { align-self: stretch; text-align: center; padding: 8px 10px; font-size: .82rem; background: #bf0000; }
 .product .btn:hover { background: #990000; }
+.pickup { margin-top: 8px; }
+.pickups {
+  display: grid; gap: 16px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+.pick {
+  position: relative; display: flex; gap: 14px; background: var(--surface);
+  border: 1px solid var(--border); border-top: 4px solid var(--accent);
+  border-radius: 12px; padding: 16px; box-shadow: var(--shadow);
+}
+.pick.manual { border-top-color: #bf0000; }
+.pick .pick-img {
+  flex: 0 0 96px; height: 96px; border-radius: 8px; overflow: hidden; background: #fff;
+  display: grid; place-items: center;
+}
+.pick .pick-img img { width: 100%; height: 100%; object-fit: contain; }
+.pick .pick-body { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.pick .pick-label { font-size: .72rem; font-weight: 700; color: var(--accent); }
+.pick.manual .pick-label { color: #bf0000; }
+.pick h3 { margin: 4px 0 6px; font-size: 1rem; line-height: 1.45; overflow-wrap: anywhere; }
+.pick p { margin: 0 0 8px; font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; flex: 1; }
+.pick .pick-meta { font-size: .75rem; color: var(--muted); margin-bottom: 10px; }
+.pick .pick-price { font-size: 1.05rem; font-weight: 700; color: var(--tag-deal-text); margin-bottom: 10px; }
+.pick.manual .btn { background: #bf0000; }
+.pick.manual .btn:hover { background: #990000; }
+@media (max-width: 480px) { .pick .pick-img { flex-basis: 72px; height: 72px; } }
 .empty { text-align: center; color: var(--muted); padding: 60px 0; }
 footer {
   background: var(--surface); border-top: 1px solid var(--border);
@@ -136,10 +162,50 @@ footer a { color: var(--accent); }
       <h1>Auto Deal Tracker</h1>
       <p>テックニュースとセール速報を毎朝7時に自動でまとめてお届け</p>
       <div class="about" role="note" aria-label="サイト概要"><strong>Auto Deal Tracker</strong> は、主要テックメディアや公式発表から最新のガジェット情報・セール速報を自動収集・配信するキュレーションメディアです。</div>
-      <div class="meta">最終更新: 2026年11月10日 19:11 (JST) ・ 64 件</div>
+      <div class="meta">最終更新: 2026年11月10日 19:22 (JST) ・ 64 件</div>
     </div>
   </header>
   <main class="container">
+    <section class="pickup" aria-labelledby="pickup-title">
+      <h2 class="section-title" id="pickup-title">今週の注目・編集部ピックアップ <span class="pr">PR</span></h2>
+      <p class="section-note">編集部が注目している商品・セールをピックアップしています。価格・在庫は変動するため、購入前にリンク先でご確認ください。</p>
+      <div class="pickups">
+        <article class="pick manual">
+          
+          <div class="pick-body">
+            <span class="pick-label">編集部おすすめ</span>
+            <h3>Anker の USB-C 急速充電器</h3>
+            <p>スマホからノート PC までまとめて充電できる定番ブランド。楽天市場の検索結果で、ポイント倍率やショップごとの価格を比べられます。</p>
+            
+            
+            <a class="btn" href="https://af.moshimo.com/af/c/click?a_id=5891942&amp;p_id=54&amp;pc_id=54&amp;pl_id=616&amp;url=https%3A%2F%2Fsearch.rakuten.co.jp%2Fsearch%2Fmall%2FAnker%2BUSB-C%2B%E5%85%85%E9%9B%BB%E5%99%A8%2F" target="_blank" rel="nofollow sponsored noopener" referrerpolicy="no-referrer-when-downgrade" attributionsrc>楽天市場で見る</a><img class="af-pixel" src="https://i.moshimo.com/af/i/impression?a_id=5891942&amp;p_id=54&amp;pc_id=54&amp;pl_id=616" width="1" height="1" alt="" loading="lazy">
+          </div>
+        </article>
+        <article class="pick manual">
+          
+          <div class="pick-body">
+            <span class="pick-label">編集部おすすめ</span>
+            <h3>Anker のモバイルバッテリー</h3>
+            <p>外出先での充電切れ対策に。容量や出力の異なるモデルを楽天市場で一覧できます。</p>
+            
+            
+            <a class="btn" href="https://af.moshimo.com/af/c/click?a_id=5891942&amp;p_id=54&amp;pc_id=54&amp;pl_id=616&amp;url=https%3A%2F%2Fsearch.rakuten.co.jp%2Fsearch%2Fmall%2FAnker%2B%E3%83%A2%E3%83%90%E3%82%A4%E3%83%AB%E3%83%90%E3%83%83%E3%83%86%E3%83%AA%E3%83%BC%2F" target="_blank" rel="nofollow sponsored noopener" referrerpolicy="no-referrer-when-downgrade" attributionsrc>楽天市場で見る</a><img class="af-pixel" src="https://i.moshimo.com/af/i/impression?a_id=5891942&amp;p_id=54&amp;pc_id=54&amp;pl_id=616" width="1" height="1" alt="" loading="lazy">
+          </div>
+        </article>
+        <article class="pick manual">
+          
+          <div class="pick-body">
+            <span class="pick-label">編集部おすすめ</span>
+            <h3>Anker Soundcore のワイヤレスイヤホン</h3>
+            <p>ノイズキャンセリング対応モデルなど種類が豊富なシリーズ。セール中のショップがないか楽天市場でチェックできます。</p>
+            
+            
+            <a class="btn" href="https://af.moshimo.com/af/c/click?a_id=5891942&amp;p_id=54&amp;pc_id=54&amp;pl_id=616&amp;url=https%3A%2F%2Fsearch.rakuten.co.jp%2Fsearch%2Fmall%2FAnker%2BSoundcore%2B%E3%82%A4%E3%83%A4%E3%83%9B%E3%83%B3%2F" target="_blank" rel="nofollow sponsored noopener" referrerpolicy="no-referrer-when-downgrade" attributionsrc>楽天市場で見る</a><img class="af-pixel" src="https://i.moshimo.com/af/i/impression?a_id=5891942&amp;p_id=54&amp;pc_id=54&amp;pl_id=616" width="1" height="1" alt="" loading="lazy">
+          </div>
+        </article>
+      </div>
+    </section>
+    <h2 class="section-title">最新ニュース・セール速報</h2>
     <nav class="filters" aria-label="カテゴリ絞り込み"><button type="button" data-filter="all" aria-pressed="true">すべて</button><button type="button" data-filter="ガジェット/セール" aria-pressed="false">ガジェット/セール</button><button type="button" data-filter="テック" aria-pressed="false">テック</button></nav>
     <section class="grid">
       <article class="card" data-category="テック">

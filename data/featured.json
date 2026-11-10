@@ -1,0 +1,23 @@
+{
+  "_help": "編集部ピックアップ。items を空 [] にすると、ガジェット/セールの最新記事3件が自動で表示されます。title と url は必須。楽天市場の URL は、もしもアフィリエイトのリンクに自動変換されます。任意項目: comment（紹介文）、price（数値なら ¥ 付きで表示）、image（https の画像 URL）、label（既定: 編集部おすすめ）、expires（YYYY-MM-DD。この日を過ぎると非表示）",
+  "items": [
+    {
+      "title": "Anker の USB-C 急速充電器",
+      "comment": "スマホからノート PC までまとめて充電できる定番ブランド。楽天市場の検索結果で、ポイント倍率やショップごとの価格を比べられます。",
+      "url": "https://search.rakuten.co.jp/search/mall/Anker+USB-C+充電器/",
+      "label": "編集部おすすめ"
+    },
+    {
+      "title": "Anker のモバイルバッテリー",
+      "comment": "外出先での充電切れ対策に。容量や出力の異なるモデルを楽天市場で一覧できます。",
+      "url": "https://search.rakuten.co.jp/search/mall/Anker+モバイルバッテリー/",
+      "label": "編集部おすすめ"
+    },
+    {
+      "title": "Anker Soundcore のワイヤレスイヤホン",
+      "comment": "ノイズキャンセリング対応モデルなど種類が豊富なシリーズ。セール中のショップがないか楽天市場でチェックできます。",
+      "url": "https://search.rakuten.co.jp/search/mall/Anker+Soundcore+イヤホン/",
+      "label": "編集部おすすめ"
+    }
+  ]
+}
