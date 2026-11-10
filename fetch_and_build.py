@@ -33,7 +33,6 @@ FEEDS: list[dict[str, str]] = [
     {"name": "ITmedia NEWS", "category": "テック", "url": "https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml"},
     {"name": "GIGAZINE", "category": "テック", "url": "https://gigazine.net/news/rss_2.0/"},
     {"name": "Publickey", "category": "テック", "url": "https://www.publickey1.jp/atom.xml"},
-    {"name": "Hacker News", "category": "テック", "url": "https://hnrss.org/frontpage"},
     {"name": "ギズモード・ジャパン", "category": "ガジェット/セール", "url": "https://www.gizmodo.jp/index.xml"},
     {"name": "ITmedia Mobile", "category": "ガジェット/セール", "url": "https://rss.itmedia.co.jp/rss/2.0/mobile.xml"},
     {"name": "PC Watch", "category": "ガジェット/セール", "url": "https://pc.watch.impress.co.jp/data/rss/1.0/pcw/feed.rdf"},
