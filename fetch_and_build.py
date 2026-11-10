@@ -40,6 +40,13 @@ FEEDS: list[dict[str, str]] = [
 
 SITE_TITLE = "Auto Deal Tracker"
 SITE_DESCRIPTION = "テックニュースとセール速報を毎朝7時に自動でまとめてお届け"
+SITE_ABOUT = (
+    "Auto Deal Tracker は、主要テックメディアや公式発表から最新のガジェット情報・"
+    "セール速報を自動収集・配信するキュレーションメディアです。"
+)
+OPERATOR_NAME = "Auto Deal Tracker 運営事務局"
+# 連絡先メールアドレス。設定すると「お問い合わせ」欄に mailto リンクを表示する。
+CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "")
 AFFILIATE_ID = os.environ.get("AFFILIATE_ID", "YOUR_AFFILIATE_ID")
 AFFILIATE_PARAM = os.environ.get("AFFILIATE_PARAM", "aff_id")
 MAX_ITEMS_PER_FEED = int(os.environ.get("MAX_ITEMS_PER_FEED", "8"))
@@ -155,6 +162,7 @@ CSS = """
   --border: #e3e8f0; --accent: #2563eb; --accent-hover: #1d4ed8;
   --tag-tech: #e0ecff; --tag-tech-text: #1e40af;
   --tag-deal: #ffe9d6; --tag-deal-text: #9a3412;
+  --about-bg: #eef4ff;
   --shadow: 0 1px 3px rgba(16,24,40,.06), 0 4px 12px rgba(16,24,40,.06);
 }
 @media (prefers-color-scheme: dark) {
@@ -163,10 +171,12 @@ CSS = """
     --border: #2a3442; --accent: #60a5fa; --accent-hover: #93c5fd;
     --tag-tech: #1e3a5f; --tag-tech-text: #bfdbfe;
     --tag-deal: #4a2a14; --tag-deal-text: #fed7aa;
+    --about-bg: #16233a;
     --shadow: 0 1px 3px rgba(0,0,0,.4);
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   margin: 0; background: var(--bg); color: var(--text); line-height: 1.6;
   font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
@@ -176,6 +186,12 @@ header { background: var(--surface); border-bottom: 1px solid var(--border); pad
 header h1 { margin: 0; font-size: clamp(1.5rem, 4vw, 2.1rem); letter-spacing: -.01em; }
 header p { margin: 6px 0 0; color: var(--muted); }
 .meta { margin-top: 10px; font-size: .85rem; color: var(--muted); }
+.about {
+  margin: 16px 0 4px; padding: 14px 18px; max-width: 820px;
+  background: var(--about-bg); border-left: 4px solid var(--accent); border-radius: 8px;
+  font-size: .95rem; color: var(--text);
+}
+.about strong { color: var(--accent); }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 8px; }
 .filters button {
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
@@ -204,7 +220,29 @@ header p { margin: 6px 0 0; color: var(--muted); }
 }
 .btn:hover { background: var(--accent-hover); }
 .empty { text-align: center; color: var(--muted); padding: 60px 0; }
-footer { border-top: 1px solid var(--border); padding: 20px 0 32px; font-size: .8rem; color: var(--muted); }
+footer {
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 32px 0 24px; font-size: .82rem; color: var(--muted);
+}
+.footer-grid {
+  display: grid; gap: 24px 32px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+}
+.footer-grid section { min-width: 0; }
+.footer-grid .policy { grid-column: span 2; }
+@media (max-width: 600px) { .footer-grid .policy { grid-column: auto; } }
+footer h3 {
+  margin: 0 0 8px; font-size: .78rem; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--text);
+}
+footer p { margin: 0 0 6px; overflow-wrap: anywhere; }
+footer ul { margin: 0; padding-left: 1.1em; }
+footer li { margin-bottom: 6px; }
+footer a { color: var(--accent); }
+.footer-bottom {
+  margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); font-size: .78rem;
+}
+.footer-bottom .disclosure { color: var(--text); }
 """
 
 JS = """
@@ -253,6 +291,15 @@ def render_page(items: list[Item]) -> str:
     )
     cards = "".join(render_card(i) for i in items) or '<p class="empty">現在表示できる記事がありません。</p>'
     sources = "、".join(e(f["name"]) for f in FEEDS)
+    if CONTACT_EMAIL:
+        contact_html = (
+            "<p>お気づきの点や掲載停止のご連絡は、下記までお問い合わせください。</p>"
+            f'<p><a href="mailto:{e(CONTACT_EMAIL)}">{e(CONTACT_EMAIL)}</a></p>'
+        )
+    else:
+        contact_html = "<p>お気づきの点や掲載停止のご連絡は、運営までお問い合わせください。</p>"
+    year = datetime.now(JST).year
+    about_html = e(SITE_ABOUT).replace(e(SITE_TITLE), "<strong>" + e(SITE_TITLE) + "</strong>", 1)
 
     return f"""<!DOCTYPE html>
 <html lang="ja">
@@ -268,6 +315,7 @@ def render_page(items: list[Item]) -> str:
     <div class="container">
       <h1>{e(SITE_TITLE)}</h1>
       <p>{e(SITE_DESCRIPTION)}</p>
+      <div class="about" role="note" aria-label="サイト概要">{about_html}</div>
       <div class="meta">最終更新: {now} (JST) ・ {len(items)} 件</div>
     </div>
   </header>
@@ -278,8 +326,28 @@ def render_page(items: list[Item]) -> str:
   </main>
   <footer>
     <div class="container">
-      <p>情報元: {sources}。各記事の著作権は配信元に帰属します。</p>
-      <p>当サイトはアフィリエイト広告（Amazonアソシエイト含む）を掲載しています。Amazonのアソシエイトとして、当メディアは適格販売により収入を得ています。</p>
+      <div class="footer-grid">
+        <section>
+          <h3>運営者情報</h3>
+          <p>{e(OPERATOR_NAME)}</p>
+        </section>
+        <section>
+          <h3>お問い合わせ</h3>
+          {contact_html}
+        </section>
+        <section class="policy">
+          <h3>プライバシーポリシー</h3>
+          <ul>
+            <li>当サイトでは、アクセス解析ツールおよび広告配信（Amazonアソシエイト、楽天アフィリエイト等のアフィリエイトプログラム）を利用しています。</li>
+            <li>これらのサービスはCookieを使用してトラフィックデータやアクセス情報を収集する場合がありますが、個人を特定する情報は含みません。ブラウザの設定でCookieを無効にすることも可能です。</li>
+          </ul>
+        </section>
+      </div>
+      <div class="footer-bottom">
+        <p class="disclosure">当サイトはアフィリエイト広告（Amazonアソシエイト含む）を掲載しています。Amazonのアソシエイトとして、当メディアは適格販売により収入を得ています。</p>
+        <p>情報元: {sources}。各記事の著作権は配信元に帰属します。</p>
+        <p>&copy; {year} {e(OPERATOR_NAME)}</p>
+      </div>
     </div>
   </footer>
   <script>{JS}</script>
