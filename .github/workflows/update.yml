@@ -1,0 +1,47 @@
+name: Update site
+
+on:
+  schedule:
+    # 毎日 日本時間 7:00 (UTC 22:00)
+    - cron: "0 22 * * *"
+  workflow_dispatch: # 手動実行も可能にする
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-site
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch feeds and build
+        env:
+          AFFILIATE_ID: ${{ secrets.AFFILIATE_ID }}
+        run: python fetch_and_build.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/index.html
+          if git diff --cached --quiet; then
+            echo "変更なし。コミットをスキップします。"
+            exit 0
+          fi
+          git commit -m "chore: update dist/index.html ($(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST'))"
+          git push
