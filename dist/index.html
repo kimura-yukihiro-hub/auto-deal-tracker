@@ -253,6 +253,11 @@ footer a { color: var(--accent); }
   margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); font-size: .78rem;
 }
 .footer-bottom .disclosure { color: var(--text); }
+.contact-btn {
+  display: inline-block; margin-top: 4px; padding: 8px 18px; border-radius: 8px; font-weight: 600;
+  background: var(--accent); color: #fff !important; text-decoration: none;
+}
+.contact-btn:hover { background: var(--accent-hover); }
 </style>
 </head>
 <body>
@@ -262,7 +267,7 @@ footer a { color: var(--accent); }
       <h1>Auto Deal Tracker</h1>
       <p>テックニュースとセール速報を毎朝7時に自動でまとめてお届け</p>
       <div class="about" role="note" aria-label="サイト概要"><strong>Auto Deal Tracker</strong> は、主要テックメディアや公式発表から最新のガジェット情報・セール速報を自動収集・配信するキュレーションメディアです。</div>
-      <div class="meta">最終更新: 2026年11月11日 13:40 (JST) ・ 64 件</div>
+      <div class="meta">最終更新: 2026年11月11日 13:53 (JST) ・ 64 件</div>
     </div>
   </header>
   <main class="container">
@@ -360,6 +365,26 @@ footer a { color: var(--accent); }
     <h2 class="section-title" id="news">最新ニュース</h2>
     <nav class="filters" aria-label="カテゴリ絞り込み"><button type="button" data-filter="all" aria-pressed="true">すべて <span class="count">64</span></button><button type="button" data-filter="セール" aria-pressed="false">セール <span class="count">10</span></button><button type="button" data-filter="ガジェット" aria-pressed="false">ガジェット <span class="count">30</span></button><button type="button" data-filter="テック" aria-pressed="false">テック <span class="count">24</span></button></nav>
     <section class="grid" aria-labelledby="news">
+      <article class="card" data-category="ガジェット">
+        <div class="card-head">
+          <span class="tag">ガジェット</span>
+          <span>PC Watch</span>
+          <time datetime="2026-11-11T13:45:20+09:00">2026/11/11 13:45</time>
+        </div>
+        <h3><a href="https://pc.watch.impress.co.jp/docs/news/2155508.html" target="_blank" rel="noopener">ナラヤンCEO最後のAdobe MAX、「クリエイターの権利」堅持を強調</a></h3>
+        <p>Adobeは、同社のクリエイターツールの年次イベント「Adobe MAX 2026」を、米国フロリダ州マイアミビーチ市の会場で、11月10日(米国時間)から開催している。初日となった11月10日には基調講演が行なわれ、同社CEOのシャンタヌ…</p>
+        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/2155508.html" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
+      <article class="card" data-category="テック">
+        <div class="card-head">
+          <span class="tag">テック</span>
+          <span>GIGAZINE</span>
+          <time datetime="2026-11-11T13:42:00+09:00">2026/11/11 13:42</time>
+        </div>
+        <h3><a href="https://gigazine.net/news/20261111-zen-6-epyc/" target="_blank" rel="noopener">AMDがZen 6を採用した第6世代EPYCの出荷開始を発表</a></h3>
+        <p>AMDがサーバー向けCPU「EPYC 9006シリーズ」の出荷開始を発表しました。続きを読む...</p>
+        <a class="btn" href="https://gigazine.net/news/20261111-zen-6-epyc/" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
       <article class="card" data-category="テック">
         <div class="card-head">
           <span class="tag">テック</span>
@@ -519,16 +544,6 @@ footer a { color: var(--accent); }
         <h3><a href="https://gigazine.net/news/20261111-less-bright-light-predictor-dementia/" target="_blank" rel="noopener">日常生活で「強い光」を浴びる量が認知症リスクに肥満よりも強く関連しているとの研究結果</a></h3>
         <p>日中に太陽の光をたくさん浴びる人は寿命が長いことが知られているほか、日照時間が短くなる冬には冬季うつ(季節性感情障害)のリスクも高まります。新たな研究では、日常生活で強い光を浴びる量が多い人は、後に認知症を発症するリスクが低いことが明らかに…</p>
         <a class="btn" href="https://gigazine.net/news/20261111-less-bright-light-predictor-dementia/" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
-      <article class="card" data-category="テック">
-        <div class="card-head">
-          <span class="tag">テック</span>
-          <span>GIGAZINE</span>
-          <time datetime="2026-11-11T12:16:00+09:00">2026/11/11 12:16</time>
-        </div>
-        <h3><a href="https://gigazine.net/news/20261111-amazon-ring-robotics/" target="_blank" rel="noopener">Amazon Ringが家の中を巡回するセキュリティロボットの「Ring Rover Cam」と屋内用ドローン「Ring Drone Cam」を発表</a></h3>
-        <p>Amazon傘下のホームセキュリティブランド「Ring」が、屋内用ロボットシリーズの「Ring Robotics」を発表しました。屋内用ドローンの「Ring Drone Cam」と屋内用移動式ロボット「Ring Rover Cam」が登場し…</p>
-        <a class="btn" href="https://gigazine.net/news/20261111-amazon-ring-robotics/" target="_blank" rel="noopener">続きを読む →</a>
       </article>
       <article class="card" data-category="ガジェット">
         <div class="card-head">
@@ -709,16 +724,6 @@ footer a { color: var(--accent); }
         <h3><a href="https://pc.watch.impress.co.jp/docs/news/2155391.html" target="_blank" rel="noopener">Ryzen搭載で約981gの12.2型軽量・堅牢モバイルノート</a></h3>
         <p>マウスコンピューターは、12.2型モバイルノート「mouse X2」シリーズから、Ryzen 5 216搭載モデルを発売した。コスモブルー、フロストゴールド、パールホワイトの3色を用意し、価格は19万9,800円。</p>
         <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/2155391.html" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
-      <article class="card" data-category="ガジェット">
-        <div class="card-head">
-          <span class="tag">ガジェット</span>
-          <span>PC Watch</span>
-          <time datetime="2026-11-11T10:56:23+09:00">2026/11/11 10:56</time>
-        </div>
-        <h3><a href="https://pc.watch.impress.co.jp/docs/news/2155365.html" target="_blank" rel="noopener">「できるWindows 11 2027年 改訂6版 Copilot対応」が3日間限定で全文無料公開</a></h3>
-        <p>インプレスは、AI活用にも対応したWindows 11の解説書「できるWindows 11 2027年 改訂6版 Copilot対応」を11月26日に発売する。価格は紙版/電子版ともに1,100円。また、11月11日から13日までの3日間限…</p>
-        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/2155365.html" target="_blank" rel="noopener">続きを読む →</a>
       </article>
       <article class="card" data-category="テック">
         <div class="card-head">
@@ -1013,7 +1018,7 @@ footer a { color: var(--accent); }
         </section>
         <section>
           <h3>お問い合わせ</h3>
-          <p>お気づきの点や掲載停止のご連絡は、運営までお問い合わせください。</p>
+          <p>お気づきの点や掲載停止のご連絡は、こちらからお問い合わせください。</p><p><a class="contact-btn" href="https://forms.gle/6e4YNCg8x5oGChBY6" target="_blank" rel="noopener">お問い合わせフォーム</a></p>
         </section>
         <section class="policy">
           <h3>プライバシーポリシー</h3>

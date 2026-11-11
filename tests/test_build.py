@@ -86,3 +86,13 @@ def test_article_page_pr_note(make_item):
     page = fb.render_article_page(ad, [plain, ad])
     assert 'class="pr-note"' in page and '"@type": "BlogPosting"' in page
     assert f'<link rel="canonical" href="{fb.SITE_URL}articles/b/">' in page
+
+
+def test_footer_contact(monkeypatch):
+    monkeypatch.setattr(fb, "CONTACT_FORM_URL", "")
+    monkeypatch.setattr(fb, "CONTACT_EMAIL", "")
+    assert "準備中" in fb.render_footer()
+    monkeypatch.setattr(fb, "CONTACT_FORM_URL", "https://forms.gle/example")
+    footer = fb.render_footer()
+    assert '<a class="contact-btn" href="https://forms.gle/example" target="_blank" rel="noopener">' in footer
+    assert "準備中" not in footer

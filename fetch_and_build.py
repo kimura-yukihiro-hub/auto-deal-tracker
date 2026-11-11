@@ -79,6 +79,8 @@ SITE_ABOUT = (
 OPERATOR_NAME = "Auto Deal Tracker 運営事務局"
 # 連絡先メールアドレス。設定すると「お問い合わせ」欄に mailto リンクを表示する。
 CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "")
+# お問い合わせフォーム（Google フォームなど）の公開 URL。設定するとフッターにボタンを表示する
+CONTACT_FORM_URL = "https://forms.gle/6e4YNCg8x5oGChBY6"
 
 # 楽天市場ランキングAPI（version: 2022-06-01）
 RAKUTEN_RANKING_ENDPOINT = "https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601"
@@ -655,6 +657,11 @@ footer a { color: var(--accent); }
   margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--border); font-size: .78rem;
 }
 .footer-bottom .disclosure { color: var(--text); }
+.contact-btn {
+  display: inline-block; margin-top: 4px; padding: 8px 18px; border-radius: 8px; font-weight: 600;
+  background: var(--accent); color: #fff !important; text-decoration: none;
+}
+.contact-btn:hover { background: var(--accent-hover); }
 """
 
 # 値札アイコンのファビコン（外部ファイル不要のインライン SVG）
@@ -870,13 +877,17 @@ def _json_ld(data: dict) -> str:
 def render_footer() -> str:
     e = html.escape
     sources = "、".join(e(f["name"]) for f in FEEDS)
-    if CONTACT_EMAIL:
-        contact_html = (
-            "<p>お気づきの点や掲載停止のご連絡は、下記までお問い合わせください。</p>"
-            f'<p><a href="mailto:{e(CONTACT_EMAIL)}">{e(CONTACT_EMAIL)}</a></p>'
+    contact_parts = []
+    if CONTACT_FORM_URL:
+        contact_parts.append(
+            f'<p><a class="contact-btn" href="{e(CONTACT_FORM_URL)}" target="_blank" rel="noopener">お問い合わせフォーム</a></p>'
         )
+    if CONTACT_EMAIL:
+        contact_parts.append(f'<p>メール: <a href="mailto:{e(CONTACT_EMAIL)}">{e(CONTACT_EMAIL)}</a></p>')
+    if contact_parts:
+        contact_html = "<p>お気づきの点や掲載停止のご連絡は、こちらからお問い合わせください。</p>" + "".join(contact_parts)
     else:
-        contact_html = "<p>お気づきの点や掲載停止のご連絡は、運営までお問い合わせください。</p>"
+        contact_html = "<p>お問い合わせ窓口は準備中です。</p>"
     year = datetime.now(JST).year
     return f"""
   <footer>
