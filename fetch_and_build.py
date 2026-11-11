@@ -70,6 +70,8 @@ if not SITE_URL.endswith("/"):
 GOOGLE_SITE_VERIFICATION = "PEJzJAjl6FvLmRWf8WOBif-XcYhrC2KI0lsWLUL-MCM"
 # Bing Webmaster Tools の所有権確認用（同上）
 BING_SITE_VERIFICATION = "3F76F98F782898A2AFB06DB65D9B5FEC"
+# Google アナリティクス 4 の測定 ID（全ページの <head> に gtag.js を埋め込む）
+GA_MEASUREMENT_ID = "G-BVN3D3J8FN"
 # IndexNow（Bing 等へ更新を通知）の所有確認キー。dist/{キー}.txt として公開する（公開して問題ない値）
 INDEXNOW_KEY = "c4cf435d8df235b2e9df3d60fb44feb3"
 OGP_IMAGE = "ogp.png"  # dist/ogp.png（assets/ogp-template.html から作成した静的画像）
@@ -1000,7 +1002,8 @@ def render_footer() -> str:
         <section class="policy">
           <h3>プライバシーポリシー</h3>
           <ul>
-            <li>当サイトでは、アクセス解析ツール（Cloudflare Web Analytics）および広告配信（Amazonアソシエイト、楽天アフィリエイト等のアフィリエイトプログラム）を利用しています。</li>
+            <li>当サイトでは、アクセス解析ツール（Google アナリティクス、Cloudflare Web Analytics）および広告配信（Amazonアソシエイト、楽天アフィリエイト等のアフィリエイトプログラム）を利用しています。</li>
+            <li>Google アナリティクスは、トラフィックデータの収集のために Cookie を使用しています。このデータは匿名で収集されており、個人を特定するものではありません。Cookie を無効にすることで収集を拒否できますので、お使いのブラウザの設定をご確認ください。詳しくは<a href="https://marketingplatform.google.com/about/analytics/terms/jp/" target="_blank" rel="noopener">Google アナリティクス利用規約</a>および<a href="https://policies.google.com/technologies/partner-sites?hl=ja" target="_blank" rel="noopener">Google のポリシーと規約</a>をご覧ください。</li>
             <li>Cloudflare Web Analytics はCookieを使用せず、個人を特定しない形でページの閲覧状況を集計します。</li>
             <li>アフィリエイトプログラムはCookieを使用してトラフィックデータやアクセス情報を収集する場合がありますが、個人を特定する情報は含みません。ブラウザの設定でCookieを無効にすることも可能です。</li>
           </ul>
@@ -1013,6 +1016,23 @@ def render_footer() -> str:
       </div>
     </div>
   </footer>"""
+
+
+def render_ga_tag() -> str:
+    """Google アナリティクス（gtag.js）のタグ。測定 ID が空なら何も出さない。"""
+    if not GA_MEASUREMENT_ID:
+        return ""
+    ga_id = html.escape(GA_MEASUREMENT_ID)
+    return f"""
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id={ga_id}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){{dataLayer.push(arguments);}}
+    gtag('js', new Date());
+
+    gtag('config', '{ga_id}');
+  </script>"""
 
 
 def render_document(
@@ -1038,7 +1058,7 @@ def render_document(
 <html lang="ja">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">{render_ga_tag()}
   <title>{e(title)}</title>
   <meta name="description" content="{e(description)}">
   <link rel="canonical" href="{e(url)}">

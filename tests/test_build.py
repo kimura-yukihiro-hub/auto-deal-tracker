@@ -163,3 +163,18 @@ def test_x_account_links(make_item):
     assert "via=" not in sale_btn
     # 記事のシェアボタンには via を付ける
     assert "&amp;via=mihariban_sale" in fb.render_share_links("t", fb.SITE_URL)
+
+
+def test_ga_tag_on_all_pages(tmp_path, monkeypatch):
+    """GA4 のタグが全ページの <head> 先頭付近に 1 回だけ入り、プライバシーポリシーにも記載がある。"""
+    monkeypatch.chdir(tmp_path)
+    pages = [
+        fb.render_document(title="t", description="d", path="", header_html="", main_html="", json_ld={}),
+        fb.render_not_found_page(),
+    ]
+    for page in pages:
+        head = page.split("</head>", 1)[0]
+        assert page.count("googletagmanager.com/gtag/js?id=G-BVN3D3J8FN") == 1
+        assert "gtag('config', 'G-BVN3D3J8FN');" in head
+        assert head.index("gtag/js") < head.index("<title>")
+    assert "Google アナリティクス" in pages[0]
