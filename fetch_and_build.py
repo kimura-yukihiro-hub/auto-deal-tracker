@@ -310,6 +310,14 @@ class Product:
     review_count: int
 
 
+def gh_annotate(level: str, title: str, message: str) -> None:
+    """GitHub Actions 上なら、実行画面に注釈（notice / warning）として表示する。"""
+    if os.environ.get("GITHUB_ACTIONS") != "true":
+        return
+    msg = message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+    print(f"::{level} title={title}::{msg}")
+
+
 def _first_image(value) -> str:
     """mediumImageUrls（文字列 or {"imageUrl": ...} の配列）から先頭画像を取り出し、拡大版にする。"""
     if not value:
@@ -336,11 +344,15 @@ def fetch_rakuten_ranking(genre_id: str) -> list[Product]:
     try:
         resp = requests.get(RAKUTEN_RANKING_ENDPOINT, params=params, headers=headers, timeout=REQUEST_TIMEOUT)
     except requests.RequestException as exc:
-        print(f"[WARN] 楽天ランキング({genre_id}): 通信失敗 ({type(exc).__name__})", file=sys.stderr)
+        msg = f"ジャンル {genre_id}: 通信失敗 ({type(exc).__name__})"
+        print(f"[WARN] 楽天ランキング {msg}", file=sys.stderr)
+        gh_annotate("warning", "楽天ランキング", msg)
         return []
     if resp.status_code != 200:
         # エラー本文には認証情報は含まれないため、原因調査用にそのまま出力する
-        print(f"[WARN] 楽天ランキング({genre_id}): HTTP {resp.status_code} {resp.text[:300]}", file=sys.stderr)
+        msg = f"ジャンル {genre_id}: HTTP {resp.status_code} {resp.text[:300]}"
+        print(f"[WARN] 楽天ランキング {msg}", file=sys.stderr)
+        gh_annotate("warning", "楽天ランキング", msg)
         return []
 
     try:
@@ -373,8 +385,14 @@ def fetch_rakuten_ranking(genre_id: str) -> list[Product]:
 
 
 def collect_rakuten_rankings() -> list[tuple[str, list[Product]]]:
+    status = (
+        f"RAKUTEN_APP_ID: {'設定あり' if RAKUTEN_APP_ID else '未設定'} / "
+        f"RAKUTEN_ACCESS_KEY: {'設定あり' if RAKUTEN_ACCESS_KEY else '未設定'} / "
+        f"RAKUTEN_SITE_URL: {'設定あり' if RAKUTEN_SITE_URL else '未設定'}"
+    )
     if not (RAKUTEN_APP_ID and RAKUTEN_ACCESS_KEY):
-        print("[INFO] 楽天APIのキーが未設定のため、ランキング欄をスキップします")
+        print(f"[INFO] 楽天APIのキーが未設定のため、ランキング欄をスキップします（{status}）")
+        gh_annotate("notice", "楽天ランキング", f"キー未設定のためスキップ（{status}）")
         return []
     sections: list[tuple[str, list[Product]]] = []
     for i, genre in enumerate(RAKUTEN_GENRES):
@@ -384,6 +402,12 @@ def collect_rakuten_rankings() -> list[tuple[str, list[Product]]]:
         print(f"[INFO] 楽天ランキング {genre['name']}: {len(products)} 件取得")
         if products:
             sections.append((genre["name"], products))
+    total = sum(len(p) for _, p in sections)
+    gh_annotate(
+        "notice" if total else "warning",
+        "楽天ランキング",
+        f"{len(sections)}/{len(RAKUTEN_GENRES)} ジャンル、{total} 件取得（{status}）",
+    )
     return sections
 
 

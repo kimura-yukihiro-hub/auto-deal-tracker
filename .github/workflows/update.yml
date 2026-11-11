@@ -9,6 +9,8 @@ on:
     branches: [main]
     paths:
       - "data/featured.json" # ピックアップを編集したらすぐ再生成する
+      - "fetch_and_build.py" # 生成処理を変更したらすぐ反映する
+      - "requirements.txt"
 
 permissions:
   contents: write
