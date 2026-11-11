@@ -260,8 +260,9 @@ footer {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
 }
 .footer-grid section { min-width: 0; }
-.footer-grid .policy { grid-column: span 2; }
-@media (max-width: 600px) { .footer-grid .policy { grid-column: auto; } }
+.footer-grid .policy { grid-column: 1 / -1; }
+footer .footer-menu { list-style: none; padding: 0; margin: 0 0 10px; }
+footer .footer-menu li { margin-bottom: 4px; }
 footer h3 {
   margin: 0 0 8px; font-size: .78rem; font-weight: 700; letter-spacing: .06em;
   text-transform: uppercase; color: var(--text);
@@ -311,7 +312,15 @@ footer a { color: var(--accent); }
         <section>
           <h3>運営者情報</h3>
           <p>セールの見張り番 運営事務局</p>
-          <p><a href="/">トップページ</a> ・ <a href="/articles/">記事一覧</a> ・ <a href="/feed.xml">RSS</a></p>
+          <p><a href="/articles/how-to-use/">このサイトについて</a></p>
+        </section>
+        <section>
+          <h3>メニュー</h3>
+          <ul class="footer-menu">
+            <li><a href="/">トップページ</a></li>
+            <li><a href="/articles/">記事一覧</a></li>
+            <li><a href="/feed.xml">RSS（記事の更新情報）</a></li>
+          </ul>
           <p><a class="follow-x" href="https://x.com/mihariban_sale" target="_blank" rel="noopener">X でフォロー（@mihariban_sale）</a></p>
         </section>
         <section>
