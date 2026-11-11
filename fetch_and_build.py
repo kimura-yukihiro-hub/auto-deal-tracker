@@ -55,6 +55,8 @@ SITE_TITLE = "Auto Deal Tracker"
 SITE_URL = os.environ.get("SITE_URL", "").strip() or "https://auto-deal-tracker.pages.dev/"
 if not SITE_URL.endswith("/"):
     SITE_URL += "/"
+# Google Search Console の所有権確認用（公開して問題ない値）。削除すると確認が外れるので残しておく
+GOOGLE_SITE_VERIFICATION = "PEJzJAjl6FvLmRWf8WOBif-XcYhrC2KI0lsWLUL-MCM"
 OGP_IMAGE = "ogp.png"  # dist/ogp.png（assets/ogp-template.html から作成した静的画像）
 SITE_DESCRIPTION = "テックニュースとセール速報を毎朝7時に自動でまとめてお届け"
 SITE_ABOUT = (
@@ -740,6 +742,7 @@ def render_page(
   <title>{e(SITE_TITLE)} | {e(SITE_DESCRIPTION)}</title>
   <meta name="description" content="{e(SITE_ABOUT)}">
   <link rel="canonical" href="{e(SITE_URL)}">
+  <meta name="google-site-verification" content="{e(GOOGLE_SITE_VERIFICATION)}">
   <meta name="theme-color" content="#2563eb">
   <link rel="icon" href="{FAVICON}">
   <meta property="og:type" content="website">
