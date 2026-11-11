@@ -57,6 +57,8 @@ if not SITE_URL.endswith("/"):
     SITE_URL += "/"
 # Google Search Console の所有権確認用（公開して問題ない値）。削除すると確認が外れるので残しておく
 GOOGLE_SITE_VERIFICATION = "PEJzJAjl6FvLmRWf8WOBif-XcYhrC2KI0lsWLUL-MCM"
+# Bing Webmaster Tools の所有権確認用（同上）
+BING_SITE_VERIFICATION = "3F76F98F782898A2AFB06DB65D9B5FEC"
 # IndexNow（Bing 等へ更新を通知）の所有確認キー。dist/{キー}.txt として公開する（公開して問題ない値）
 INDEXNOW_KEY = "c4cf435d8df235b2e9df3d60fb44feb3"
 OGP_IMAGE = "ogp.png"  # dist/ogp.png（assets/ogp-template.html から作成した静的画像）
@@ -745,6 +747,7 @@ def render_page(
   <meta name="description" content="{e(SITE_ABOUT)}">
   <link rel="canonical" href="{e(SITE_URL)}">
   <meta name="google-site-verification" content="{e(GOOGLE_SITE_VERIFICATION)}">
+  <meta name="msvalidate.01" content="{e(BING_SITE_VERIFICATION)}">
   <meta name="theme-color" content="#2563eb">
   <link rel="icon" href="{FAVICON}">
   <meta property="og:type" content="website">
