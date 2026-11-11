@@ -49,12 +49,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dist/index.html
+          git add dist/
           if git diff --cached --quiet; then
             echo "変更なし。コミットをスキップします。"
             exit 0
           fi
-          git commit -m "chore: update dist/index.html ($(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST'))"
+          git commit -m "chore: update site ($(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST'))"
           # 実行中に別のコミット（featured.json の編集など）が入っても push できるよう取り込む
           git pull --rebase origin main
           git push

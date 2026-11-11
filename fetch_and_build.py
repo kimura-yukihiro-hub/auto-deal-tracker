@@ -51,6 +51,11 @@ FEEDS: list[dict[str, str]] = [
 ]
 
 SITE_TITLE = "Auto Deal Tracker"
+# 公開URL（末尾スラッシュ付き）。独自ドメインに移行したら環境変数 SITE_URL で上書きする
+SITE_URL = os.environ.get("SITE_URL", "").strip() or "https://auto-deal-tracker.pages.dev/"
+if not SITE_URL.endswith("/"):
+    SITE_URL += "/"
+OGP_IMAGE = "ogp.png"  # dist/ogp.png（assets/ogp-template.html から作成した静的画像）
 SITE_DESCRIPTION = "テックニュースとセール速報を毎朝7時に自動でまとめてお届け"
 SITE_ABOUT = (
     "Auto Deal Tracker は、主要テックメディアや公式発表から最新のガジェット情報・"
@@ -566,6 +571,16 @@ footer a { color: var(--accent); }
 .footer-bottom .disclosure { color: var(--text); }
 """
 
+# 値札アイコンのファビコン（外部ファイル不要のインライン SVG）
+FAVICON = (
+    "data:image/svg+xml,"
+    "%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E"
+    "%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E"
+    "%3Cpath d='M24.6 17.4l-7.2 7.2a1.9 1.9 0 0 1-2.7 0L7 17V7h10l7.6 7.6a1.9 1.9 0 0 1 0 2.8z' "
+    "fill='none' stroke='%23fff' stroke-width='2.2' stroke-linejoin='round'/%3E"
+    "%3Ccircle cx='11.5' cy='11.5' r='1.8' fill='%23fff'/%3E%3C/svg%3E"
+)
+
 JS = """
 document.querySelectorAll('.filters button').forEach(function (btn) {
   btn.addEventListener('click', function () {
@@ -702,7 +717,19 @@ def render_page(
     else:
         contact_html = "<p>お気づきの点や掲載停止のご連絡は、運営までお問い合わせください。</p>"
     year = datetime.now(JST).year
-    news_heading = '\n    <h2 class="section-title">最新ニュース・セール速報</h2>' if (picks or rankings) else ""
+    json_ld = json.dumps(
+        {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": SITE_TITLE,
+            "url": SITE_URL,
+            "description": SITE_ABOUT,
+            "inLanguage": "ja",
+            "publisher": {"@type": "Organization", "name": OPERATOR_NAME},
+        },
+        ensure_ascii=False,
+    ).replace("</", "<\\/")
+    news_heading ='\n    <h2 class="section-title">最新ニュース・セール速報</h2>' if (picks or rankings) else ""
     about_html = e(SITE_ABOUT).replace(e(SITE_TITLE), "<strong>" + e(SITE_TITLE) + "</strong>", 1)
 
     return f"""<!DOCTYPE html>
@@ -710,8 +737,22 @@ def render_page(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="{e(SITE_DESCRIPTION)}">
-  <title>{e(SITE_TITLE)}</title>
+  <title>{e(SITE_TITLE)} | {e(SITE_DESCRIPTION)}</title>
+  <meta name="description" content="{e(SITE_ABOUT)}">
+  <link rel="canonical" href="{e(SITE_URL)}">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="icon" href="{FAVICON}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="{e(SITE_TITLE)}">
+  <meta property="og:title" content="{e(SITE_TITLE)} | {e(SITE_DESCRIPTION)}">
+  <meta property="og:description" content="{e(SITE_ABOUT)}">
+  <meta property="og:url" content="{e(SITE_URL)}">
+  <meta property="og:image" content="{e(SITE_URL + OGP_IMAGE)}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="ja_JP">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">{json_ld}</script>
   <style>{CSS}</style>
 </head>
 <body>
@@ -742,8 +783,9 @@ def render_page(
         <section class="policy">
           <h3>プライバシーポリシー</h3>
           <ul>
-            <li>当サイトでは、アクセス解析ツールおよび広告配信（Amazonアソシエイト、楽天アフィリエイト等のアフィリエイトプログラム）を利用しています。</li>
-            <li>これらのサービスはCookieを使用してトラフィックデータやアクセス情報を収集する場合がありますが、個人を特定する情報は含みません。ブラウザの設定でCookieを無効にすることも可能です。</li>
+            <li>当サイトでは、アクセス解析ツール（Cloudflare Web Analytics）および広告配信（Amazonアソシエイト、楽天アフィリエイト等のアフィリエイトプログラム）を利用しています。</li>
+            <li>Cloudflare Web Analytics はCookieを使用せず、個人を特定しない形でページの閲覧状況を集計します。</li>
+            <li>アフィリエイトプログラムはCookieを使用してトラフィックデータやアクセス情報を収集する場合がありますが、個人を特定する情報は含みません。ブラウザの設定でCookieを無効にすることも可能です。</li>
           </ul>
         </section>
       </div>
@@ -760,6 +802,23 @@ def render_page(
 """
 
 
+def write_seo_files() -> None:
+    """検索エンジン向けの robots.txt と sitemap.xml を dist/ に出力する。"""
+    out = OUTPUT_PATH.parent
+    (out / "robots.txt").write_text(
+        f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8"
+    )
+    today = datetime.now(JST).strftime("%Y-%m-%d")
+    (out / "sitemap.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"  <url>\n    <loc>{html.escape(SITE_URL)}</loc>\n    <lastmod>{today}</lastmod>\n"
+        "    <changefreq>daily</changefreq>\n  </url>\n"
+        "</urlset>\n",
+        encoding="utf-8",
+    )
+
+
 def main() -> int:
     items = collect_items()
     if not items:
@@ -769,6 +828,7 @@ def main() -> int:
     rankings = collect_rakuten_rankings()
     picks = select_picks(items)
     OUTPUT_PATH.write_text(render_page(items, rankings, picks), encoding="utf-8")
+    write_seo_files()
     print(f"[INFO] {OUTPUT_PATH} を生成しました（{len(items)} 件）")
     return 0
 

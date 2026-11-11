@@ -21,6 +21,4 @@ env/
 .DS_Store
 Thumbs.db
 
-# Build output: dist/index.html はコミット対象、それ以外は無視
-dist/*
-!dist/index.html
+# Build output: dist/ は Cloudflare Pages の公開対象なのでコミットする（index.html / robots.txt / sitemap.xml / ogp.png）
