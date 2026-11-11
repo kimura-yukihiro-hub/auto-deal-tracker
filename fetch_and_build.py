@@ -596,6 +596,8 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .prose th, .prose td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
 .prose th { background: var(--bg); }
 .related { max-width: 760px; margin: 0 auto 40px; }
+.not-found { text-align: center; padding: 64px 0 80px; }
+.not-found-links { text-align: center; }
 footer {
   background: var(--surface); border-top: 1px solid var(--border);
   padding: 32px 0 24px; font-size: .82rem; color: var(--muted);
@@ -1009,6 +1011,26 @@ def render_article_index(articles: list[Article]) -> str:
     )
 
 
+def render_not_found_page() -> str:
+    """存在しない URL 用のページ。Cloudflare Pages は dist/404.html があると 404 で返す。"""
+    main_html = """
+    <section class="not-found">
+      <h1 class="page-title">ページが見つかりません</h1>
+      <p class="section-note">お探しのページは移動または削除された可能性があります。</p>
+      <p class="more-link not-found-links"><a href="/">トップページへ</a> ・ <a href="/articles/">記事一覧へ</a></p>
+    </section>"""
+    page = render_document(
+        title=f"ページが見つかりません | {SITE_TITLE}",
+        description="お探しのページは見つかりませんでした。",
+        path="404.html",
+        header_html=render_site_header(),
+        main_html=main_html,
+        json_ld={"@context": "https://schema.org", "@type": "WebPage", "name": "404"},
+    )
+    # 検索結果に載せない
+    return page.replace("<head>\n", '<head>\n  <meta name="robots" content="noindex">\n', 1)
+
+
 def write_article_pages(articles: list[Article]) -> None:
     """dist/articles/ を作り直し、記事一覧と各記事のページを出力する（削除した記事はページも消える）。"""
     out = OUTPUT_PATH.parent / "articles"
@@ -1069,6 +1091,7 @@ def main() -> int:
     print(f"[INFO] 独自記事: {len(articles)} 件")
     OUTPUT_PATH.write_text(render_page(items, rankings, picks, articles), encoding="utf-8")
     write_article_pages(articles)
+    (OUTPUT_PATH.parent / "404.html").write_text(render_not_found_page(), encoding="utf-8")
     write_seo_files(articles)
     print(f"[INFO] {OUTPUT_PATH} を生成しました（{len(items)} 件）")
     return 0
