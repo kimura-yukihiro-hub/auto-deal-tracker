@@ -814,6 +814,12 @@ def write_seo_files() -> None:
     """検索エンジン向けの robots.txt・sitemap.xml・IndexNow キーファイルを dist/ に出力する。"""
     out = OUTPUT_PATH.parent
     (out / f"{INDEXNOW_KEY}.txt").write_text(INDEXNOW_KEY, encoding="utf-8")
+    # Bing Webmaster Tools の XML ファイル認証（meta タグ認証の代替）
+    (out / "BingSiteAuth.xml").write_text(
+        '<?xml version="1.0"?>\n<users>\n\t<user>'
+        f"{html.escape(BING_SITE_VERIFICATION)}</user>\n</users>\n",
+        encoding="utf-8",
+    )
     (out / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8"
     )
