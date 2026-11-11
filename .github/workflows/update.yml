@@ -12,6 +12,9 @@ on:
       - "data/featured.json" # ピックアップを編集したらすぐ再生成する
       - "fetch_and_build.py" # 生成処理を変更したらすぐ反映する
       - "notify_indexnow.py"
+      - "articles.py"
+      - "affiliate.py"
+      - "articles/**" # 記事を追加・編集したらすぐ公開する
       - "requirements.txt"
       - ".github/workflows/update.yml"
 

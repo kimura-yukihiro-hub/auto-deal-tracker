@@ -15,8 +15,12 @@
 
 アフィリエイト:
     リンク先が楽天市場（*.rakuten.co.jp）の場合のみ、もしもアフィリエイトの
-    「どこでもリンク」形式に変換し、インプレッション計測用の 1x1 ピクセルを付与する。
+    「どこでもリンク」形式に変換し、インプレッション計測用の 1x1 ピクセルを付与する（affiliate.py）。
     それ以外（ニュース記事など）は元の URL のままリンクする。
+
+独自記事:
+    articles/*.md（Markdown）を dist/articles/<ファイル名>/index.html に変換する（articles.py）。
+    書き方は articles/_template.md を参照。
 """
 
 from __future__ import annotations
@@ -25,15 +29,19 @@ import html
 import json
 import os
 import re
+import shutil
 import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import quote, urlencode, urlparse
+from urllib.parse import urlparse
 
 import feedparser
 import requests
+
+from affiliate import build_moshimo_rakuten_link, is_rakuten_ichiba_url, moshimo_rakuten_impression_url
+from articles import Article, load_articles
 
 # ---------------------------------------------------------------------------
 # 設定
@@ -70,10 +78,6 @@ SITE_ABOUT = (
 OPERATOR_NAME = "Auto Deal Tracker 運営事務局"
 # 連絡先メールアドレス。設定すると「お問い合わせ」欄に mailto リンクを表示する。
 CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "")
-# もしもアフィリエイト × 楽天市場「どこでもリンク」の本番パラメータ
-MOSHIMO_RAKUTEN_PARAMS = {"a_id": "5891942", "p_id": "54", "pc_id": "54", "pl_id": "616"}
-MOSHIMO_CLICK_URL = "https://af.moshimo.com/af/c/click"
-MOSHIMO_IMPRESSION_URL = "https://i.moshimo.com/af/i/impression"
 
 # 楽天市場ランキングAPI（version: 2022-06-01）
 RAKUTEN_RANKING_ENDPOINT = "https://openapi.rakuten.co.jp/ichibaranking/api/IchibaItem/Ranking/20220601"
@@ -102,6 +106,10 @@ FEATURED_PATH = BASE_DIR / "data" / "featured.json"
 MAX_FEATURED = 6
 FALLBACK_PICK_COUNT = 3
 FALLBACK_PICK_CATEGORY = "ガジェット/セール"
+
+# 独自記事（articles/*.md → dist/articles/<slug>/index.html）
+ARTICLES_DIR = BASE_DIR / "articles"
+TOP_ARTICLE_COUNT = 3  # トップページに表示する最新記事の数
 
 
 # ---------------------------------------------------------------------------
@@ -138,24 +146,6 @@ def parse_date(entry) -> datetime | None:
             except (TypeError, ValueError):
                 continue
     return None
-
-
-def is_rakuten_ichiba_url(url: str) -> bool:
-    """楽天市場の URL か判定する（楽天の既存アフィリエイトリンク afl.rakuten.co.jp は除外）。"""
-    host = (urlparse(url).hostname or "").lower()
-    if not (host == "rakuten.co.jp" or host.endswith(".rakuten.co.jp")):
-        return False
-    return not (host == "afl.rakuten.co.jp" or host.endswith(".afl.rakuten.co.jp"))
-
-
-def build_moshimo_rakuten_link(url: str) -> str:
-    """楽天市場の URL を、もしもアフィリエイトの「どこでもリンク」に変換する。"""
-    query = urlencode(MOSHIMO_RAKUTEN_PARAMS)
-    return f"{MOSHIMO_CLICK_URL}?{query}&url={quote(url, safe='')}"
-
-
-def moshimo_rakuten_impression_url() -> str:
-    return f"{MOSHIMO_IMPRESSION_URL}?{urlencode(MOSHIMO_RAKUTEN_PARAMS)}"
 
 
 def render_link(url: str, label: str) -> str:
@@ -552,6 +542,58 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .pick.manual .btn:hover { background: #990000; }
 @media (max-width: 480px) { .pick .pick-img { flex-basis: 72px; height: 72px; } }
 .empty { text-align: center; color: var(--muted); padding: 60px 0; }
+/* 独自記事 */
+.article-cards {
+  display: grid; gap: 16px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+.article-card {
+  display: flex; flex-direction: column; background: var(--surface);
+  border: 1px solid var(--border); border-left: 4px solid var(--accent);
+  border-radius: 12px; padding: 16px 18px; box-shadow: var(--shadow);
+}
+.article-card h3 { margin: 8px 0 6px; font-size: 1.02rem; line-height: 1.5; overflow-wrap: anywhere; }
+.article-card h3 a { color: var(--text); text-decoration: none; }
+.article-card h3 a:hover { color: var(--accent); text-decoration: underline; }
+.article-card p { margin: 0; font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
+.more-link { margin: 12px 0 0; text-align: right; font-size: .9rem; }
+.more-link a, .breadcrumb a { color: var(--accent); }
+.site-header { padding: 14px 0; }
+.site-header .container { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.site-name { font-weight: 800; font-size: 1.2rem; color: var(--text); text-decoration: none; }
+.site-nav { display: flex; gap: 16px; font-size: .9rem; }
+.site-nav a { color: var(--muted); text-decoration: none; }
+.site-nav a:hover { color: var(--accent); }
+.breadcrumb { margin: 20px 0 8px; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+.page-title { margin: 8px 0 4px; font-size: 1.6rem; }
+.post {
+  max-width: 760px; margin: 8px auto 32px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 14px; padding: clamp(18px, 4vw, 40px); box-shadow: var(--shadow);
+}
+.post-header h1 { margin: 0 0 10px; font-size: clamp(1.4rem, 4vw, 1.9rem); line-height: 1.4; overflow-wrap: anywhere; }
+.post-meta { font-size: .82rem; color: var(--muted); }
+.post-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.pr-note {
+  margin: 18px 0 0; padding: 10px 14px; border-radius: 8px; font-size: .82rem;
+  background: var(--bg); color: var(--muted); display: flex; gap: 8px; align-items: center;
+}
+.prose { margin-top: 24px; font-size: 1rem; line-height: 1.9; overflow-wrap: anywhere; }
+.prose h2 { font-size: 1.3rem; margin: 2em 0 .6em; padding-bottom: .3em; border-bottom: 2px solid var(--border); }
+.prose h3 { font-size: 1.1rem; margin: 1.6em 0 .5em; }
+.prose p { margin: 0 0 1.1em; }
+.prose a { color: var(--accent); }
+.prose img { max-width: 100%; height: auto; border-radius: 8px; }
+.prose img.af-pixel { width: 1px; height: 1px; }
+.prose ul, .prose ol { padding-left: 1.4em; margin: 0 0 1.1em; }
+.prose li { margin-bottom: .3em; }
+.prose blockquote { margin: 0 0 1.1em; padding: .4em 1em; border-left: 4px solid var(--border); color: var(--muted); }
+.prose code { background: var(--bg); padding: .1em .35em; border-radius: 4px; font-size: .9em; }
+.prose pre { background: var(--bg); padding: 12px 14px; border-radius: 8px; overflow-x: auto; }
+.prose pre code { background: none; padding: 0; }
+.prose table { width: 100%; border-collapse: collapse; margin: 0 0 1.1em; font-size: .92rem; display: block; overflow-x: auto; }
+.prose th, .prose td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+.prose th { background: var(--bg); }
+.related { max-width: 760px; margin: 0 auto 40px; }
 footer {
   background: var(--surface); border-top: 1px solid var(--border);
   padding: 32px 0 24px; font-size: .82rem; color: var(--muted);
@@ -702,18 +744,12 @@ def render_rankings(sections: list[tuple[str, list[Product]]]) -> str:
     </section>"""
 
 
-def render_page(
-    items: list[Item],
-    rankings: list[tuple[str, list[Product]]] | None = None,
-    picks: list[Pick] | None = None,
-) -> str:
+def _json_ld(data: dict) -> str:
+    return json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
+
+
+def render_footer() -> str:
     e = html.escape
-    now = datetime.now(JST).strftime("%Y年%m月%d日 %H:%M")
-    categories = sorted({i.category for i in items})
-    filter_buttons = '<button type="button" data-filter="all" aria-pressed="true">すべて</button>' + "".join(
-        f'<button type="button" data-filter="{e(c)}" aria-pressed="false">{e(c)}</button>' for c in categories
-    )
-    cards = "".join(render_card(i) for i in items) or '<p class="empty">現在表示できる記事がありません。</p>'
     sources = "、".join(e(f["name"]) for f in FEEDS)
     if CONTACT_EMAIL:
         contact_html = (
@@ -723,66 +759,14 @@ def render_page(
     else:
         contact_html = "<p>お気づきの点や掲載停止のご連絡は、運営までお問い合わせください。</p>"
     year = datetime.now(JST).year
-    json_ld = json.dumps(
-        {
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "name": SITE_TITLE,
-            "url": SITE_URL,
-            "description": SITE_ABOUT,
-            "inLanguage": "ja",
-            "publisher": {"@type": "Organization", "name": OPERATOR_NAME},
-        },
-        ensure_ascii=False,
-    ).replace("</", "<\\/")
-    news_heading ='\n    <h2 class="section-title">最新ニュース・セール速報</h2>' if (picks or rankings) else ""
-    about_html = e(SITE_ABOUT).replace(e(SITE_TITLE), "<strong>" + e(SITE_TITLE) + "</strong>", 1)
-
-    return f"""<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{e(SITE_TITLE)} | {e(SITE_DESCRIPTION)}</title>
-  <meta name="description" content="{e(SITE_ABOUT)}">
-  <link rel="canonical" href="{e(SITE_URL)}">
-  <meta name="google-site-verification" content="{e(GOOGLE_SITE_VERIFICATION)}">
-  <meta name="msvalidate.01" content="{e(BING_SITE_VERIFICATION)}">
-  <meta name="theme-color" content="#2563eb">
-  <link rel="icon" href="{FAVICON}">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="{e(SITE_TITLE)}">
-  <meta property="og:title" content="{e(SITE_TITLE)} | {e(SITE_DESCRIPTION)}">
-  <meta property="og:description" content="{e(SITE_ABOUT)}">
-  <meta property="og:url" content="{e(SITE_URL)}">
-  <meta property="og:image" content="{e(SITE_URL + OGP_IMAGE)}">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <meta property="og:locale" content="ja_JP">
-  <meta name="twitter:card" content="summary_large_image">
-  <script type="application/ld+json">{json_ld}</script>
-  <style>{CSS}</style>
-</head>
-<body>
-  <header>
-    <div class="container">
-      <h1>{e(SITE_TITLE)}</h1>
-      <p>{e(SITE_DESCRIPTION)}</p>
-      <div class="about" role="note" aria-label="サイト概要">{about_html}</div>
-      <div class="meta">最終更新: {now} (JST) ・ {len(items)} 件</div>
-    </div>
-  </header>
-  <main class="container">{render_picks(picks or [])}{render_rankings(rankings or [])}{news_heading}
-    <nav class="filters" aria-label="カテゴリ絞り込み">{filter_buttons}</nav>
-    <section class="grid">{cards}
-    </section>
-  </main>
+    return f"""
   <footer>
     <div class="container">
       <div class="footer-grid">
         <section>
           <h3>運営者情報</h3>
           <p>{e(OPERATOR_NAME)}</p>
+          <p><a href="/">トップページ</a> ・ <a href="/articles/">記事一覧</a></p>
         </section>
         <section>
           <h3>お問い合わせ</h3>
@@ -803,14 +787,240 @@ def render_page(
         <p>&copy; {year} {e(OPERATOR_NAME)}</p>
       </div>
     </div>
-  </footer>
-  <script>{JS}</script>
+  </footer>"""
+
+
+def render_document(
+    *,
+    title: str,
+    description: str,
+    path: str,
+    header_html: str,
+    main_html: str,
+    json_ld: dict,
+    og_type: str = "website",
+    og_image: str = "",
+    script: str = "",
+) -> str:
+    """全ページ共通の HTML（head・フッター）で本文を包む。path はサイト内パス（トップは空文字）。"""
+    e = html.escape
+    url = SITE_URL + path
+    image = og_image or SITE_URL + OGP_IMAGE
+    if image.startswith("/"):
+        image = SITE_URL + image.lstrip("/")
+    script_html = f"\n  <script>{script}</script>" if script else ""
+    return f"""<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{e(title)}</title>
+  <meta name="description" content="{e(description)}">
+  <link rel="canonical" href="{e(url)}">
+  <meta name="google-site-verification" content="{e(GOOGLE_SITE_VERIFICATION)}">
+  <meta name="msvalidate.01" content="{e(BING_SITE_VERIFICATION)}">
+  <meta name="theme-color" content="#2563eb">
+  <link rel="icon" href="{FAVICON}">
+  <meta property="og:type" content="{e(og_type)}">
+  <meta property="og:site_name" content="{e(SITE_TITLE)}">
+  <meta property="og:title" content="{e(title)}">
+  <meta property="og:description" content="{e(description)}">
+  <meta property="og:url" content="{e(url)}">
+  <meta property="og:image" content="{e(image)}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="ja_JP">
+  <meta name="twitter:card" content="summary_large_image">
+  <script type="application/ld+json">{_json_ld(json_ld)}</script>
+  <style>{CSS}</style>
+</head>
+<body>{header_html}
+  <main class="container">{main_html}
+  </main>{render_footer()}{script_html}
 </body>
 </html>
 """
 
 
-def write_seo_files() -> None:
+def render_site_header() -> str:
+    """記事ページ用のコンパクトなヘッダー（サイト名はトップへのリンク）。"""
+    e = html.escape
+    return f"""
+  <header class="site-header">
+    <div class="container">
+      <a class="site-name" href="/">{e(SITE_TITLE)}</a>
+      <nav class="site-nav" aria-label="サイト内"><a href="/">トップ</a><a href="/articles/">記事一覧</a></nav>
+    </div>
+  </header>"""
+
+
+def render_article_card(a: Article) -> str:
+    e = html.escape
+    tags = "".join(f'<span class="tag">{e(t)}</span>' for t in a.tags[:3])
+    return f"""
+        <article class="article-card">
+          <div class="card-head">{tags}<time datetime="{a.date.isoformat()}">{a.date.strftime("%Y/%m/%d")}</time></div>
+          <h3><a href="/{e(a.path)}">{e(a.title)}</a></h3>
+          <p>{e(a.description)}</p>
+        </article>"""
+
+
+def render_article_section(articles: list[Article]) -> str:
+    if not articles:
+        return ""
+    cards = "".join(render_article_card(a) for a in articles[:TOP_ARTICLE_COUNT])
+    more = '<p class="more-link"><a href="/articles/">記事一覧へ →</a></p>' if len(articles) > TOP_ARTICLE_COUNT else ""
+    return f"""
+    <section class="articles" aria-labelledby="articles-title">
+      <h2 class="section-title" id="articles-title">編集部の記事</h2>
+      <div class="article-cards">{cards}
+      </div>{more}
+    </section>"""
+
+
+def render_page(
+    items: list[Item],
+    rankings: list[tuple[str, list[Product]]] | None = None,
+    picks: list[Pick] | None = None,
+    articles: list[Article] | None = None,
+) -> str:
+    e = html.escape
+    now = datetime.now(JST).strftime("%Y年%m月%d日 %H:%M")
+    categories = sorted({i.category for i in items})
+    filter_buttons = '<button type="button" data-filter="all" aria-pressed="true">すべて</button>' + "".join(
+        f'<button type="button" data-filter="{e(c)}" aria-pressed="false">{e(c)}</button>' for c in categories
+    )
+    cards = "".join(render_card(i) for i in items) or '<p class="empty">現在表示できる記事がありません。</p>'
+    articles = articles or []
+    news_heading = (
+        '\n    <h2 class="section-title">最新ニュース・セール速報</h2>' if (picks or rankings or articles) else ""
+    )
+    about_html = e(SITE_ABOUT).replace(e(SITE_TITLE), "<strong>" + e(SITE_TITLE) + "</strong>", 1)
+    header_html = f"""
+  <header>
+    <div class="container">
+      <h1>{e(SITE_TITLE)}</h1>
+      <p>{e(SITE_DESCRIPTION)}</p>
+      <div class="about" role="note" aria-label="サイト概要">{about_html}</div>
+      <div class="meta">最終更新: {now} (JST) ・ {len(items)} 件</div>
+    </div>
+  </header>"""
+    main_html = f"""{render_picks(picks or [])}{render_article_section(articles)}{render_rankings(rankings or [])}{news_heading}
+    <nav class="filters" aria-label="カテゴリ絞り込み">{filter_buttons}</nav>
+    <section class="grid">{cards}
+    </section>"""
+    return render_document(
+        title=f"{SITE_TITLE} | {SITE_DESCRIPTION}",
+        description=SITE_ABOUT,
+        path="",
+        header_html=header_html,
+        main_html=main_html,
+        json_ld={
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": SITE_TITLE,
+            "url": SITE_URL,
+            "description": SITE_ABOUT,
+            "inLanguage": "ja",
+            "publisher": {"@type": "Organization", "name": OPERATOR_NAME},
+        },
+        script=JS,
+    )
+
+
+def render_article_page(a: Article, articles: list[Article]) -> str:
+    e = html.escape
+    tags = "".join(f'<span class="tag">{e(t)}</span>' for t in a.tags)
+    updated = (
+        f' ・ 更新 <time datetime="{a.updated.isoformat()}">{a.updated.strftime("%Y/%m/%d")}</time>'
+        if a.updated and a.updated != a.date else ""
+    )
+    pr_note = (
+        '<p class="pr-note"><span class="pr">PR</span> この記事にはアフィリエイト広告（楽天市場へのリンク）が含まれています。</p>'
+        if a.has_affiliate else ""
+    )
+    others = [x for x in articles if x.slug != a.slug][:3]
+    related = (
+        f"""
+      <section class="related" aria-labelledby="related-title">
+        <h2 class="section-title" id="related-title">ほかの記事</h2>
+        <div class="article-cards">{"".join(render_article_card(x) for x in others)}
+        </div>
+      </section>"""
+        if others else ""
+    )
+    main_html = f"""
+    <nav class="breadcrumb" aria-label="パンくずリスト"><a href="/">トップ</a> › <a href="/articles/">記事一覧</a> › <span>{e(a.title)}</span></nav>
+    <article class="post">
+      <header class="post-header">
+        <h1>{e(a.title)}</h1>
+        <div class="post-meta"><time datetime="{a.date.isoformat()}">{a.date.strftime("%Y/%m/%d")}</time>{updated} ・ {e(OPERATOR_NAME)}</div>
+        <div class="post-tags">{tags}</div>
+      </header>
+      {pr_note}
+      <div class="prose">{a.body_html}</div>
+    </article>{related}"""
+    return render_document(
+        title=f"{a.title} | {SITE_TITLE}",
+        description=a.description,
+        path=a.path,
+        header_html=render_site_header(),
+        main_html=main_html,
+        og_type="article",
+        og_image=a.image,
+        json_ld={
+            "@context": "https://schema.org",
+            "@type": "BlogPosting",
+            "headline": a.title,
+            "description": a.description,
+            "datePublished": a.date.isoformat(),
+            "dateModified": a.last_modified.isoformat(),
+            "inLanguage": "ja",
+            "mainEntityOfPage": SITE_URL + a.path,
+            "author": {"@type": "Organization", "name": OPERATOR_NAME},
+            "publisher": {"@type": "Organization", "name": OPERATOR_NAME},
+        },
+    )
+
+
+def render_article_index(articles: list[Article]) -> str:
+    cards = "".join(render_article_card(a) for a in articles) or '<p class="empty">記事はまだありません。</p>'
+    main_html = f"""
+    <nav class="breadcrumb" aria-label="パンくずリスト"><a href="/">トップ</a> › <span>記事一覧</span></nav>
+    <h1 class="page-title">記事一覧</h1>
+    <p class="section-note">{html.escape(OPERATOR_NAME)} が書いたガジェット・セール情報の記事です。</p>
+    <div class="article-cards">{cards}
+    </div>"""
+    return render_document(
+        title=f"記事一覧 | {SITE_TITLE}",
+        description=f"{SITE_TITLE} 編集部の記事一覧。ガジェットの選び方やセール情報をまとめています。",
+        path="articles/",
+        header_html=render_site_header(),
+        main_html=main_html,
+        json_ld={
+            "@context": "https://schema.org",
+            "@type": "CollectionPage",
+            "name": f"記事一覧 | {SITE_TITLE}",
+            "url": SITE_URL + "articles/",
+            "inLanguage": "ja",
+        },
+    )
+
+
+def write_article_pages(articles: list[Article]) -> None:
+    """dist/articles/ を作り直し、記事一覧と各記事のページを出力する（削除した記事はページも消える）。"""
+    out = OUTPUT_PATH.parent / "articles"
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
+    (out / "index.html").write_text(render_article_index(articles), encoding="utf-8")
+    for a in articles:
+        page_dir = out / a.slug
+        page_dir.mkdir()
+        (page_dir / "index.html").write_text(render_article_page(a, articles), encoding="utf-8")
+
+
+def write_seo_files(articles: list[Article] | None = None) -> None:
     """検索エンジン向けの robots.txt・sitemap.xml・IndexNow キーファイルを dist/ に出力する。"""
     out = OUTPUT_PATH.parent
     (out / f"{INDEXNOW_KEY}.txt").write_text(INDEXNOW_KEY, encoding="utf-8")
@@ -823,13 +1033,19 @@ def write_seo_files() -> None:
     (out / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8"
     )
-    today = datetime.now(JST).strftime("%Y-%m-%d")
+    today = datetime.now(JST).date()
+    articles = articles or []
+    entries = [(SITE_URL, today, "daily"), (SITE_URL + "articles/", articles[0].last_modified if articles else today, "weekly")]
+    entries += [(SITE_URL + a.path, a.last_modified, "monthly") for a in articles]
+    urls = "".join(
+        f"  <url>\n    <loc>{html.escape(loc)}</loc>\n    <lastmod>{mod.isoformat()}</lastmod>\n"
+        f"    <changefreq>{freq}</changefreq>\n  </url>\n"
+        for loc, mod, freq in entries
+    )
     (out / "sitemap.xml").write_text(
         '<?xml version="1.0" encoding="UTF-8"?>\n'
         '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        f"  <url>\n    <loc>{html.escape(SITE_URL)}</loc>\n    <lastmod>{today}</lastmod>\n"
-        "    <changefreq>daily</changefreq>\n  </url>\n"
-        "</urlset>\n",
+        f"{urls}</urlset>\n",
         encoding="utf-8",
     )
 
@@ -842,8 +1058,11 @@ def main() -> int:
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     rankings = collect_rakuten_rankings()
     picks = select_picks(items)
-    OUTPUT_PATH.write_text(render_page(items, rankings, picks), encoding="utf-8")
-    write_seo_files()
+    articles = load_articles(ARTICLES_DIR, urlparse(SITE_URL).hostname or "")
+    print(f"[INFO] 独自記事: {len(articles)} 件")
+    OUTPUT_PATH.write_text(render_page(items, rankings, picks, articles), encoding="utf-8")
+    write_article_pages(articles)
+    write_seo_files(articles)
     print(f"[INFO] {OUTPUT_PATH} を生成しました（{len(items)} 件）")
     return 0
 

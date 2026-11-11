@@ -8,14 +8,16 @@ dist/index.html の「最終更新」表記が本番ページに出るまで待�
 
 from __future__ import annotations
 
+import html
 import re
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 import requests
 
-from fetch_and_build import INDEXNOW_KEY, OUTPUT_PATH, SITE_URL, USER_AGENT
+from fetch_and_build import INDEXNOW_KEY, JST, OUTPUT_PATH, SITE_URL, USER_AGENT
 
 INDEXNOW_ENDPOINT = "https://api.indexnow.org/indexnow"
 WAIT_SECONDS = 600
@@ -76,9 +78,24 @@ def notify(urls: list[str]) -> None:
     print(f"::{level} title=IndexNow::HTTP {resp.status_code} {msg}（{', '.join(urls)}）")
 
 
+def changed_urls() -> list[str]:
+    """sitemap.xml のうち、更新日（lastmod）が今日の URL を返す（トップページは毎日更新）。"""
+    today = datetime.now(JST).date().isoformat()
+    try:
+        sitemap = (Path(OUTPUT_PATH).parent / "sitemap.xml").read_text(encoding="utf-8")
+    except OSError:
+        return [SITE_URL]
+    urls = [
+        html.unescape(loc)
+        for loc, mod in re.findall(r"<loc>(.*?)</loc>\s*<lastmod>(.*?)</lastmod>", sitemap)
+        if mod == today
+    ]
+    return urls or [SITE_URL]
+
+
 def main() -> int:
     if "--no-wait" in sys.argv or wait_for_deploy():
-        notify([SITE_URL])
+        notify(changed_urls())
     return 0
 
 

@@ -147,6 +147,58 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .pick.manual .btn:hover { background: #990000; }
 @media (max-width: 480px) { .pick .pick-img { flex-basis: 72px; height: 72px; } }
 .empty { text-align: center; color: var(--muted); padding: 60px 0; }
+/* 独自記事 */
+.article-cards {
+  display: grid; gap: 16px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+.article-card {
+  display: flex; flex-direction: column; background: var(--surface);
+  border: 1px solid var(--border); border-left: 4px solid var(--accent);
+  border-radius: 12px; padding: 16px 18px; box-shadow: var(--shadow);
+}
+.article-card h3 { margin: 8px 0 6px; font-size: 1.02rem; line-height: 1.5; overflow-wrap: anywhere; }
+.article-card h3 a { color: var(--text); text-decoration: none; }
+.article-card h3 a:hover { color: var(--accent); text-decoration: underline; }
+.article-card p { margin: 0; font-size: .85rem; color: var(--muted); overflow-wrap: anywhere; }
+.more-link { margin: 12px 0 0; text-align: right; font-size: .9rem; }
+.more-link a, .breadcrumb a { color: var(--accent); }
+.site-header { padding: 14px 0; }
+.site-header .container { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.site-name { font-weight: 800; font-size: 1.2rem; color: var(--text); text-decoration: none; }
+.site-nav { display: flex; gap: 16px; font-size: .9rem; }
+.site-nav a { color: var(--muted); text-decoration: none; }
+.site-nav a:hover { color: var(--accent); }
+.breadcrumb { margin: 20px 0 8px; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+.page-title { margin: 8px 0 4px; font-size: 1.6rem; }
+.post {
+  max-width: 760px; margin: 8px auto 32px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 14px; padding: clamp(18px, 4vw, 40px); box-shadow: var(--shadow);
+}
+.post-header h1 { margin: 0 0 10px; font-size: clamp(1.4rem, 4vw, 1.9rem); line-height: 1.4; overflow-wrap: anywhere; }
+.post-meta { font-size: .82rem; color: var(--muted); }
+.post-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; }
+.pr-note {
+  margin: 18px 0 0; padding: 10px 14px; border-radius: 8px; font-size: .82rem;
+  background: var(--bg); color: var(--muted); display: flex; gap: 8px; align-items: center;
+}
+.prose { margin-top: 24px; font-size: 1rem; line-height: 1.9; overflow-wrap: anywhere; }
+.prose h2 { font-size: 1.3rem; margin: 2em 0 .6em; padding-bottom: .3em; border-bottom: 2px solid var(--border); }
+.prose h3 { font-size: 1.1rem; margin: 1.6em 0 .5em; }
+.prose p { margin: 0 0 1.1em; }
+.prose a { color: var(--accent); }
+.prose img { max-width: 100%; height: auto; border-radius: 8px; }
+.prose img.af-pixel { width: 1px; height: 1px; }
+.prose ul, .prose ol { padding-left: 1.4em; margin: 0 0 1.1em; }
+.prose li { margin-bottom: .3em; }
+.prose blockquote { margin: 0 0 1.1em; padding: .4em 1em; border-left: 4px solid var(--border); color: var(--muted); }
+.prose code { background: var(--bg); padding: .1em .35em; border-radius: 4px; font-size: .9em; }
+.prose pre { background: var(--bg); padding: 12px 14px; border-radius: 8px; overflow-x: auto; }
+.prose pre code { background: none; padding: 0; }
+.prose table { width: 100%; border-collapse: collapse; margin: 0 0 1.1em; font-size: .92rem; display: block; overflow-x: auto; }
+.prose th, .prose td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; }
+.prose th { background: var(--bg); }
+.related { max-width: 760px; margin: 0 auto 40px; }
 footer {
   background: var(--surface); border-top: 1px solid var(--border);
   padding: 32px 0 24px; font-size: .82rem; color: var(--muted);
@@ -178,7 +230,7 @@ footer a { color: var(--accent); }
       <h1>Auto Deal Tracker</h1>
       <p>テックニュースとセール速報を毎朝7時に自動でまとめてお届け</p>
       <div class="about" role="note" aria-label="サイト概要"><strong>Auto Deal Tracker</strong> は、主要テックメディアや公式発表から最新のガジェット情報・セール速報を自動収集・配信するキュレーションメディアです。</div>
-      <div class="meta">最終更新: 2026年11月11日 10:57 (JST) ・ 64 件</div>
+      <div class="meta">最終更新: 2026年11月11日 11:16 (JST) ・ 64 件</div>
     </div>
   </header>
   <main class="container">
@@ -221,9 +273,89 @@ footer a { color: var(--accent); }
         </article>
       </div>
     </section>
+    <section class="articles" aria-labelledby="articles-title">
+      <h2 class="section-title" id="articles-title">編集部の記事</h2>
+      <div class="article-cards">
+        <article class="article-card">
+          <div class="card-head"><span class="tag">サイト案内</span><span class="tag">使い方</span><time datetime="2026-11-11">2026/11/11</time></div>
+          <h3><a href="/articles/how-to-use/">Auto Deal Tracker の使い方と、情報を選ぶときの方針</a></h3>
+          <p>Auto Deal Tracker が毎朝どのように情報を集めているか、ページの見方、広告（PR）の扱い、価格を確認するときの注意点をまとめました。</p>
+        </article>
+      </div>
+    </section>
     <h2 class="section-title">最新ニュース・セール速報</h2>
     <nav class="filters" aria-label="カテゴリ絞り込み"><button type="button" data-filter="all" aria-pressed="true">すべて</button><button type="button" data-filter="ガジェット/セール" aria-pressed="false">ガジェット/セール</button><button type="button" data-filter="テック" aria-pressed="false">テック</button></nav>
     <section class="grid">
+      <article class="card" data-category="ガジェット/セール">
+        <div class="card-head">
+          <span class="tag deal">ガジェット/セール</span>
+          <span>PC Watch</span>
+          <time datetime="2026-11-11T11:04:55+09:00">2026/11/11 11:04</time>
+        </div>
+        <h2>【本日みつけたお買い得品】約2万円オフでカラー対応Kindleが販売中！AmazonスマイルSale</h2>
+        <p>Amazonでは11月4日から12日にかけてスマイルSaleを開催中だ。セールでは同社のカラー表示対応の電子書籍リーダー「Kindle Colorsoft」の2025年モデルが、11月3日頃のセール前の価格から1万9,571円引きとなる3万…</p>
+        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2155403.html" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
+      <article class="card" data-category="ガジェット/セール">
+        <div class="card-head">
+          <span class="tag deal">ガジェット/セール</span>
+          <span>ギズモード・ジャパン</span>
+          <time datetime="2026-11-11T11:00:00+09:00">2026/11/11 11:00</time>
+        </div>
+        <h2>このキーボード、遺跡から発掘されたん？</h2>
+        <p>古代遺跡のようなサビ加工と最新の磁気スイッチを融合したKeychronの新作キーボード「Q19 HE 8K」の魅力を紹介します。</p>
+        <a class="btn" href="https://www.gizmodo.jp/article/2611-keychron-q19-he-8k-review/" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
+      <article class="card" data-category="ガジェット/セール">
+        <div class="card-head">
+          <span class="tag deal">ガジェット/セール</span>
+          <span>PC Watch</span>
+          <time datetime="2026-11-11T11:00:00+09:00">2026/11/11 11:00</time>
+        </div>
+        <h2>Ryzen搭載で約981gの12.2型軽量・堅牢モバイルノート</h2>
+        <p>マウスコンピューターは、12.2型モバイルノート「mouse X2」シリーズから、Ryzen 5 216搭載モデルを発売した。コスモブルー、フロストゴールド、パールホワイトの3色を用意し、価格は19万9,800円。</p>
+        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/2155391.html" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
+      <article class="card" data-category="テック">
+        <div class="card-head">
+          <span class="tag">テック</span>
+          <span>GIGAZINE</span>
+          <time datetime="2026-11-11T10:58:00+09:00">2026/11/11 10:58</time>
+        </div>
+        <h2>1600万画素の画像を生成できる画像生成AI「MiniMax-H3-Image」が登場、ローカルで実行可能で画像編集や複数画像参照にも対応</h2>
+        <p>中国企業のMiniMaxが画像生成AI「MiniMax-H3-Image」を公開しました。1600万ピクセルの画像を実用的な速度で生成できることを強みとしています。続きを読む...</p>
+        <a class="btn" href="https://gigazine.net/news/20261111-minimax-h3-image/" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
+      <article class="card" data-category="ガジェット/セール">
+        <div class="card-head">
+          <span class="tag deal">ガジェット/セール</span>
+          <span>PC Watch</span>
+          <time datetime="2026-11-11T10:56:23+09:00">2026/11/11 10:56</time>
+        </div>
+        <h2>「できるWindows 11 2027年 改訂6版 Copilot対応」が3日間限定で全文無料公開</h2>
+        <p>インプレスは、AI活用にも対応したWindows 11の解説書「できるWindows 11 2027年 改訂6版 Copilot対応」を11月26日に発売する。価格は紙版/電子版ともに1,100円。また、11月11日から13日までの3日間限…</p>
+        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/2155365.html" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
+      <article class="card" data-category="ガジェット/セール">
+        <div class="card-head">
+          <span class="tag deal">ガジェット/セール</span>
+          <span>PC Watch</span>
+          <time datetime="2026-11-11T10:54:38+09:00">2026/11/11 10:54</time>
+        </div>
+        <h2>「スパコンの限界を超えた」量子コンピュータ「黎明」、56量子ビットで新段階へ</h2>
+        <p>国立研究開発法人理化学研究所(理研)は2026年11月10日、量子コンピュータ「黎明(れいめい)」が56量子ビットの「System Model H2」へとアップグレードしたのにあわせて、理研和光キャンパスで記念式典を開催した。</p>
+        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/2155393.html" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
+      <article class="card" data-category="テック">
+        <div class="card-head">
+          <span class="tag">テック</span>
+          <span>ITmedia NEWS</span>
+          <time datetime="2026-11-11T10:52:11+09:00">2026/11/11 10:52</time>
+        </div>
+        <h2>【復旧】「iCloud」で朝から障害 「ログインできない」ユーザー混乱、メールやカレンダーも</h2>
+        <p>「iCloudアカウントおよびサインイン」「iCloudカレンダー」など6つのサービスが、一部のユーザーで「機能停止」状態だ。【追記あり】</p>
+        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/11/2000003090/" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
       <article class="card" data-category="ガジェット/セール">
         <div class="card-head">
           <span class="tag deal">ガジェット/セール</span>
@@ -233,6 +365,26 @@ footer a { color: var(--accent); }
         <h2>【本日みつけたお買い得品】Acerの14型OLED搭載Androidタブレットが約8千円引き！AmazonスマイルSale</h2>
         <p>Amazonでは11月4日から12日までスマイルSaleを開催している。セールにおいて、Acerの14.0型Androidタブレット「Iconia X14」(X14-11MN-H16Q)が、直近価格から7,921円引きとなる6万9,879円…</p>
         <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2155384.html" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
+      <article class="card" data-category="テック">
+        <div class="card-head">
+          <span class="tag">テック</span>
+          <span>ITmedia NEWS</span>
+          <time datetime="2026-11-11T10:38:56+09:00">2026/11/11 10:38</time>
+        </div>
+        <h2>相次ぐ個人情報流出対策に、パスワードは紙に書いてアナログ管理 一部「伏せ文字」で</h2>
+        <p>高齢者にもスマートフォン（スマホ）はすっかり浸透した。スマホのアプリは便利だが、設定したパスワードを思い出せなくなることもあれば、最近はスマホに記憶させておいたままだと不正利用の不安もある。</p>
+        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/11/2000003092/" target="_blank" rel="noopener">続きを読む →</a>
+      </article>
+      <article class="card" data-category="テック">
+        <div class="card-head">
+          <span class="tag">テック</span>
+          <span>ITmedia NEWS</span>
+          <time datetime="2026-11-11T10:30:44+09:00">2026/11/11 10:30</time>
+        </div>
+        <h2>エディオン、クレカ番号＋セキュリティコードも一部漏えいか 決済処理に不正プログラム、エラーログにも記録</h2>
+        <p>決済処理に不正なプログラムが組み込まれていた。また、注文画面でエラーが発生した際、例外的にシステムログへカード番号やセキュリティコードが一時的に記録されていた。</p>
+        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/11/2000003091/" target="_blank" rel="noopener">続きを読む →</a>
       </article>
       <article class="card" data-category="ガジェット/セール">
         <div class="card-head">
@@ -324,16 +476,6 @@ footer a { color: var(--accent); }
         <p>Amazon.co.jpのスマイル Saleで、「UGREEN Nexode 65W 急速充電器」が参考価格の4380円から28％オフとなる3150円で販売中。3ポート搭載でノートPCやスマホを3台同時に急速充電できる。</p>
         <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/11/news054.html" target="_blank" rel="noopener">続きを読む →</a>
       </article>
-      <article class="card" data-category="テック">
-        <div class="card-head">
-          <span class="tag">テック</span>
-          <span>ITmedia NEWS</span>
-          <time datetime="2026-11-11T09:42:26+09:00">2026/11/11 09:42</time>
-        </div>
-        <h2>「iCloud」で朝から障害 「ログインできない」ユーザー混乱、メールやカレンダーも</h2>
-        <p>「iCloudアカウントおよびサインイン」「iCloudカレンダー」など6つのサービスが、一部のユーザーで「機能停止」状態だ。</p>
-        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/11/2000003090/" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
       <article class="card" data-category="ガジェット/セール">
         <div class="card-head">
           <span class="tag deal">ガジェット/セール</span>
@@ -403,16 +545,6 @@ footer a { color: var(--accent); }
         <h2>GIGAZINE読者は記事広告で何をレビューしてほしいのか？</h2>
         <p>ゲームを長時間プレイしたときにスマートフォンがどれくらい熱くなるのかや、冷凍食品を調理するとどんな仕上がりになるのかなど、実際に製品を買う前にレビューを読んで確かめておきたいことはいろいろあります。GIGAZINEでは編集部が製品やサービス…</p>
         <a class="btn" href="https://gigazine.net/news/20261111-gigazine-review-survey/" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
-      <article class="card" data-category="ガジェット/セール">
-        <div class="card-head">
-          <span class="tag deal">ガジェット/セール</span>
-          <span>PC Watch</span>
-          <time datetime="2026-11-11T08:58:24+09:00">2026/11/11 08:58</time>
-        </div>
-        <h2>Meta、Claude Haiku 5.5同等でコスト3分の1のAIモデル「Muse Ember」</h2>
-        <p>Metaは11月9日(現地時間)、Claude Haiku 5.5に匹敵する性能を3分の1のコストで実現するというAIモデル「Muse Ember」を発表した。Muse CodeやMeta Model APIのほか、Google Cloud…</p>
-        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/2155244.html" target="_blank" rel="noopener">続きを読む →</a>
       </article>
       <article class="card" data-category="ガジェット/セール">
         <div class="card-head">
@@ -504,16 +636,6 @@ footer a { color: var(--accent); }
         <p>80年代のレトロな楽器やオーディオをモチーフにしたカシオの新作デジタルウオッチ「LF-40W」の魅力を紹介します。軽くてお手ごろな価格ながら、遊び心あるデザインと充実した機能を備えた注目モデルです。</p>
         <a class="btn" href="https://www.gizmodo.jp/article/2611-casio-classic-lf40w-retro-watch/" target="_blank" rel="noopener">続きを読む →</a>
       </article>
-      <article class="card" data-category="ガジェット/セール">
-        <div class="card-head">
-          <span class="tag deal">ガジェット/セール</span>
-          <span>PC Watch</span>
-          <time datetime="2026-11-11T06:13:00+09:00">2026/11/11 06:13</time>
-        </div>
-        <h2>【やじうまミニレビュー】画面への近づきすぎを防ぐ近視対策ライト「めまもりん」。PCでも活用できる？</h2>
-        <p>要約はありません。</p>
-        <a class="btn" href="https://pc.watch.impress.co.jp/docs/column/yajiuma-mini-review/2155319.html" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
       <article class="card" data-category="テック">
         <div class="card-head">
           <span class="tag">テック</span>
@@ -523,16 +645,6 @@ footer a { color: var(--accent); }
         <h2>11年間にわたるリバースエンジニアリングでDOS版「ウイングコマンダー」の2人同時協力プレイ実現に成功</h2>
         <p>子どもの頃にDOS版「ウイングコマンダー」の協力プレイを楽しんでいた兄弟が、11年もの間リバースエンジニアリングを続け、ついに夢に見た「僚機との協力プレイ」を実現しました。単一のコックピットを共有するのではなくそれぞれの機体を駆って協力プレ…</p>
         <a class="btn" href="https://gigazine.net/news/20261111-wing-commander-together/" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
-      <article class="card" data-category="テック">
-        <div class="card-head">
-          <span class="tag">テック</span>
-          <span>ITmedia NEWS</span>
-          <time datetime="2026-11-11T05:00:00+09:00">2026/11/11 05:00</time>
-        </div>
-        <h2>「盗撮」→「法律で規制」が話題のAI眼鏡 海外では大ヒットなのに、日本での普及は限定的 ビジネスでの活用事例を探る</h2>
-        <p>海外で規制する動きが出ている「AI眼鏡（スマートグラス）」。負の側面が注目されがちだが、ビジネスや医療の現場で活用される事例も出始めている。</p>
-        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/11/2000002913/" target="_blank" rel="noopener">続きを読む →</a>
       </article>
       <article class="card" data-category="ガジェット/セール">
         <div class="card-head">
@@ -573,26 +685,6 @@ footer a { color: var(--accent); }
         <h2>.NET 8と.NET 9のサポートは昨日で終了。脆弱性が社会問題化している現在、.NET 10への移行を推奨</h2>
         <p>マイクロソフトの包括的なソフトウェアフレームワーク「.NET 8」と「.NET 9」のサポートが昨日（2026年11月10日）終了しました。 .NET 8は今から3年前の2023年11月にリリースされ.NET 9はその1年後の2024年11…</p>
         <a class="btn" href="https://www.publickey1.jp/blog/26/net_8net_9net_10.html" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
-      <article class="card" data-category="ガジェット/セール">
-        <div class="card-head">
-          <span class="tag deal">ガジェット/セール</span>
-          <span>PC Watch</span>
-          <time datetime="2026-11-11T02:00:00+09:00">2026/11/11 02:00</time>
-        </div>
-        <h2>【やじうまミニレビュー】iPhone優勢の日本でも不利なし？Google純正タグPixel Tagを試す</h2>
-        <p>要約はありません。</p>
-        <a class="btn" href="https://pc.watch.impress.co.jp/docs/column/yajiuma-mini-review/2155299.html" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
-      <article class="card" data-category="ガジェット/セール">
-        <div class="card-head">
-          <span class="tag deal">ガジェット/セール</span>
-          <span>PC Watch</span>
-          <time datetime="2026-11-11T02:00:00+09:00">2026/11/11 02:00</time>
-        </div>
-        <h2>AMD、第6世代EPYC「9006 SP7」出荷開始。Xeon 6比最大3.3倍速</h2>
-        <p>AMDは11月10日(米国時間、日本時間11月11日未明)に報道発表を行ない、同社の次世代データセンター向けCPU「第6世代EPYC」(開発コードネーム: Venice、ヴェニス)の詳細と、最初の製品となるVenice SP7こと「9006…</p>
-        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/2155286.html" target="_blank" rel="noopener">続きを読む →</a>
       </article>
       <article class="card" data-category="ガジェット/セール">
         <div class="card-head">
@@ -657,26 +749,6 @@ footer a { color: var(--accent); }
       <article class="card" data-category="ガジェット/セール">
         <div class="card-head">
           <span class="tag deal">ガジェット/セール</span>
-          <span>ギズモード・ジャパン</span>
-          <time datetime="2026-11-10T22:00:00+09:00">2026/11/10 22:00</time>
-        </div>
-        <h2>トランプ氏、｢AI｣呼びを禁止へ。｢スーパーインテリジェンス｣は定着する？</h2>
-        <p>トランプ大統領が公式文書でのAI用語使用禁止とスーパーインテリジェンスへの名称変更を推進する背景と、テック業界やメディアにおける定着の現状を解説します。</p>
-        <a class="btn" href="https://www.gizmodo.jp/article/2611-trump-ban-ai-super-intelligence/" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
-      <article class="card" data-category="テック">
-        <div class="card-head">
-          <span class="tag">テック</span>
-          <span>GIGAZINE</span>
-          <time datetime="2026-11-10T21:00:00+09:00">2026/11/10 21:00</time>
-        </div>
-        <h2>よく飛ぶ紙飛行機の作り方をまとめて難易度や用紙の種類で絞り込みもできるサイト「Foldable Flight」</h2>
-        <p>「Foldable Flight」は紙飛行機専門のYouTubeチャンネルおよびオンラインデータベースで、作りたい紙飛行機の作成難度・見た目のタイプ・使う用紙などから紙飛行機を選択し、作り方を見ることができます。続きを読む...</p>
-        <a class="btn" href="https://gigazine.net/news/20261110-foldable-flight/" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
-      <article class="card" data-category="ガジェット/セール">
-        <div class="card-head">
-          <span class="tag deal">ガジェット/セール</span>
           <span>GetNavi web</span>
           <time datetime="2026-11-10T20:30:00+09:00">2026/11/10 20:30</time>
         </div>
@@ -693,16 +765,6 @@ footer a { color: var(--accent); }
         <h2>SIXPADが「起きているときに着る」リカバリーウェアを提案！ 運動中・仕事中も疲労回復をサポート</h2>
         <p>EMSトレーニング機器で知られるSIXPAD（シックスパッド）は、リカバリーウェア「SIXPAD Recovery Wear」を刷新し、2026年10月22日より新シリーズを発売しました。スポーツや日常生活、睡眠時など、... The po…</p>
         <a class="btn" href="https://getnavi.jp/fashion/1120639/" target="_blank" rel="noopener">続きを読む →</a>
-      </article>
-      <article class="card" data-category="テック">
-        <div class="card-head">
-          <span class="tag">テック</span>
-          <span>ITmedia NEWS</span>
-          <time datetime="2026-11-10T20:01:53+09:00">2026/11/10 20:01</time>
-        </div>
-        <h2>ソフトバンクG、マスク氏の「債務不履行」投稿に「全くの事実無根」 7～9月期決算は1兆円超の赤字</h2>
-        <p>ソフトバンクグループの後藤芳光CFOは11月10日の決算説明会で、米SpaceXのイーロン・マスクCEOがXに投稿した「債務不履行」の指摘を「全くの事実無根」と否定した。米中間選挙での民主党勝利については、データセンター事業が遅れる可能性も…</p>
-        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/10/2000003079/" target="_blank" rel="noopener">続きを読む →</a>
       </article>
       <article class="card" data-category="ガジェット/セール">
         <div class="card-head">
@@ -872,6 +934,7 @@ footer a { color: var(--accent); }
         <section>
           <h3>運営者情報</h3>
           <p>Auto Deal Tracker 運営事務局</p>
+          <p><a href="/">トップページ</a> ・ <a href="/articles/">記事一覧</a></p>
         </section>
         <section>
           <h3>お問い合わせ</h3>
