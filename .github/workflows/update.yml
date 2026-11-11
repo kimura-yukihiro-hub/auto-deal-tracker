@@ -23,6 +23,9 @@ on:
       - "ai_draft.py"
       - "articles/**" # 記事を追加・編集したらすぐ公開する
       - "requirements.txt"
+      - "requirements-dev.txt"
+      - "pytest.ini"
+      - "tests/**"
       - ".github/workflows/update.yml"
 
 permissions:
@@ -47,7 +50,11 @@ jobs:
           cache: pip
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements-dev.txt
+
+      # テストに失敗したら、ここで止まりサイトは更新しない（壊れたページを公開しない）
+      - name: Run tests
+        run: python -m pytest
 
       - name: Fetch feeds and build
         env:

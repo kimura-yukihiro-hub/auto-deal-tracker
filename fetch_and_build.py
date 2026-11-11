@@ -172,11 +172,13 @@ def fetch_feed(feed: dict[str, str]) -> list[Item]:
         resp.raise_for_status()
     except requests.RequestException as exc:
         print(f"[WARN] {feed['name']}: 取得失敗 ({exc})", file=sys.stderr)
+        gh_annotate("warning", "ニュース取得", f"{feed['name']}: 取得失敗（{type(exc).__name__}）{feed['url']}")
         return []
 
     parsed = feedparser.parse(resp.content)
     if parsed.bozo and not parsed.entries:
         print(f"[WARN] {feed['name']}: パース失敗 ({parsed.bozo_exception})", file=sys.stderr)
+        gh_annotate("warning", "ニュース取得", f"{feed['name']}: RSS を読み取れません（URL が変わった可能性）{feed['url']}")
         return []
 
     items: list[Item] = []
@@ -196,6 +198,8 @@ def fetch_feed(feed: dict[str, str]) -> list[Item]:
             )
         )
     print(f"[INFO] {feed['name']}: {len(items)} 件取得")
+    if not items:
+        gh_annotate("warning", "ニュース取得", f"{feed['name']}: 記事が 0 件でした（RSS の形式が変わった可能性）{feed['url']}")
     return items
 
 
