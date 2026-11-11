@@ -54,7 +54,8 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dist/
+          # dist/: 公開ページ / articles/: 自動作成した週刊まとめ記事 / data/deals_log.json: セール記事の記録
+          git add dist/ articles/ data/deals_log.json
           if git diff --cached --quiet; then
             echo "変更なし。コミットをスキップします。"
             echo "changed=false" >> "$GITHUB_OUTPUT"

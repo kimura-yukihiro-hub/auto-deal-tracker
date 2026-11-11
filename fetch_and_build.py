@@ -42,6 +42,7 @@ import requests
 
 from affiliate import build_moshimo_rakuten_link, is_rakuten_ichiba_url, moshimo_rakuten_impression_url
 from articles import Article, load_articles
+from digest import maybe_write_weekly_digest, update_log
 
 # ---------------------------------------------------------------------------
 # 設定
@@ -110,6 +111,7 @@ FALLBACK_PICK_CATEGORY = "ガジェット/セール"
 # 独自記事（articles/*.md → dist/articles/<slug>/index.html）
 ARTICLES_DIR = BASE_DIR / "articles"
 TOP_ARTICLE_COUNT = 3  # トップページに表示する最新記事の数
+DEALS_LOG_PATH = BASE_DIR / "data" / "deals_log.json"  # 週刊まとめ用のセール記事の記録（digest.py）
 
 
 # ---------------------------------------------------------------------------
@@ -1058,6 +1060,11 @@ def main() -> int:
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     rankings = collect_rakuten_rankings()
     picks = select_picks(items)
+    today = datetime.now(JST).date()
+    deals_log = update_log(items, DEALS_LOG_PATH, today)
+    maybe_write_weekly_digest(
+        deals_log, picks, ARTICLES_DIR, today, force=os.environ.get("FORCE_WEEKLY_DIGEST") == "1"
+    )
     articles = load_articles(ARTICLES_DIR, urlparse(SITE_URL).hostname or "")
     print(f"[INFO] 独自記事: {len(articles)} 件")
     OUTPUT_PATH.write_text(render_page(items, rankings, picks, articles), encoding="utf-8")
