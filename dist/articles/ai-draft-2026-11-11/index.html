@@ -57,7 +57,35 @@ header p { margin: 6px 0 0; color: var(--muted); }
   font-size: .95rem; color: var(--text);
 }
 .about strong { color: var(--accent); }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 8px; }
+.filters {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; padding: 10px 0;
+  position: sticky; top: 0; z-index: 5; background: var(--bg);
+}
+.top-nav { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 4px 18px; font-size: .85rem; margin-bottom: 6px; }
+.top-nav a { color: var(--muted); text-decoration: none; }
+.top-nav a:hover { color: var(--accent); text-decoration: underline; }
+#sale, #news { scroll-margin-top: 12px; }
+.sales { margin-top: 8px; }
+.sale-items {
+  display: grid; gap: 12px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+}
+.sale-item {
+  background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--tag-deal-text);
+  border-radius: 10px; padding: 12px 14px; box-shadow: var(--shadow); min-width: 0;
+}
+.sale-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .75rem; color: var(--muted); }
+.sale-meta time { margin-left: auto; }
+.sale-item h3 { margin: 6px 0 4px; font-size: .95rem; line-height: 1.5; overflow-wrap: anywhere; }
+.sale-item h3 a, .card h3 a { color: var(--text); text-decoration: none; }
+.sale-item h3 a:hover, .card h3 a:hover { color: var(--accent); text-decoration: underline; }
+.sale-item p { margin: 0; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+.more-wrap { text-align: center; margin: -16px 0 40px; }
+.more-btn {
+  font: inherit; font-size: .95rem; font-weight: 600; padding: 10px 28px; border-radius: 999px; cursor: pointer;
+  background: var(--surface); color: var(--accent); border: 1px solid var(--accent);
+}
+.more-btn:hover { background: var(--accent); color: #fff; }
 .filters button {
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
   padding: 6px 14px; border-radius: 999px; font: inherit; font-size: .9rem; cursor: pointer;
@@ -77,7 +105,7 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); }
 .tag { padding: 2px 8px; border-radius: 6px; font-weight: 600; background: var(--tag-tech); color: var(--tag-tech-text); }
 .tag.deal { background: var(--tag-deal); color: var(--tag-deal-text); }
-.card h2 { font-size: 1.05rem; line-height: 1.45; margin: 10px 0 8px; overflow-wrap: anywhere; }
+.card h3 { font-size: 1.05rem; line-height: 1.45; margin: 10px 0 8px; overflow-wrap: anywhere; }
 .card p { margin: 0 0 16px; color: var(--muted); font-size: .9rem; flex: 1; overflow-wrap: anywhere; }
 .card time { margin-left: auto; }
 .btn {

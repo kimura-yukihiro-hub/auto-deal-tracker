@@ -455,7 +455,35 @@ header p { margin: 6px 0 0; color: var(--muted); }
   font-size: .95rem; color: var(--text);
 }
 .about strong { color: var(--accent); }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0 8px; }
+.filters {
+  display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 8px; padding: 10px 0;
+  position: sticky; top: 0; z-index: 5; background: var(--bg);
+}
+.top-nav { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 4px 18px; font-size: .85rem; margin-bottom: 6px; }
+.top-nav a { color: var(--muted); text-decoration: none; }
+.top-nav a:hover { color: var(--accent); text-decoration: underline; }
+#sale, #news { scroll-margin-top: 12px; }
+.sales { margin-top: 8px; }
+.sale-items {
+  display: grid; gap: 12px; margin-top: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+}
+.sale-item {
+  background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--tag-deal-text);
+  border-radius: 10px; padding: 12px 14px; box-shadow: var(--shadow); min-width: 0;
+}
+.sale-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .75rem; color: var(--muted); }
+.sale-meta time { margin-left: auto; }
+.sale-item h3 { margin: 6px 0 4px; font-size: .95rem; line-height: 1.5; overflow-wrap: anywhere; }
+.sale-item h3 a, .card h3 a { color: var(--text); text-decoration: none; }
+.sale-item h3 a:hover, .card h3 a:hover { color: var(--accent); text-decoration: underline; }
+.sale-item p { margin: 0; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
+.more-wrap { text-align: center; margin: -16px 0 40px; }
+.more-btn {
+  font: inherit; font-size: .95rem; font-weight: 600; padding: 10px 28px; border-radius: 999px; cursor: pointer;
+  background: var(--surface); color: var(--accent); border: 1px solid var(--accent);
+}
+.more-btn:hover { background: var(--accent); color: #fff; }
 .filters button {
   border: 1px solid var(--border); background: var(--surface); color: var(--text);
   padding: 6px 14px; border-radius: 999px; font: inherit; font-size: .9rem; cursor: pointer;
@@ -475,7 +503,7 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); }
 .tag { padding: 2px 8px; border-radius: 6px; font-weight: 600; background: var(--tag-tech); color: var(--tag-tech-text); }
 .tag.deal { background: var(--tag-deal); color: var(--tag-deal-text); }
-.card h2 { font-size: 1.05rem; line-height: 1.45; margin: 10px 0 8px; overflow-wrap: anywhere; }
+.card h3 { font-size: 1.05rem; line-height: 1.45; margin: 10px 0 8px; overflow-wrap: anywhere; }
 .card p { margin: 0 0 16px; color: var(--muted); font-size: .9rem; flex: 1; overflow-wrap: anywhere; }
 .card time { margin-left: auto; }
 .btn {
@@ -635,19 +663,47 @@ FAVICON = (
     "%3Ccircle cx='11.5' cy='11.5' r='1.8' fill='%23fff'/%3E%3C/svg%3E"
 )
 
+NEWS_INITIAL_COUNT = 18  # 「すべて」表示で最初に見せるニュースの件数（残りは「もっと見る」）
+SALE_SECTION_COUNT = 6  # 「最新のセール速報」欄の件数
+
+# JavaScript が無効でも全件が表示される（検索エンジンにも全件が見える）よう、隠す処理は JS 側だけで行う
 JS = """
-document.querySelectorAll('.filters button').forEach(function (btn) {
-  btn.addEventListener('click', function () {
-    var cat = btn.dataset.filter;
+(function () {
+  var LIMIT = %d;
+  var current = 'all';
+  var expanded = false;
+  var more = document.getElementById('more-news');
+  function apply() {
+    var shown = 0, rest = 0;
+    document.querySelectorAll('.grid .card').forEach(function (card) {
+      var match = current === 'all' || card.dataset.category === current;
+      var visible = match && (expanded || current !== 'all' || shown < LIMIT);
+      if (match && !visible) rest++;
+      if (visible) shown++;
+      card.hidden = !visible;
+    });
+    if (more) {
+      more.hidden = rest === 0;
+      more.querySelector('.more-count').textContent = rest;
+    }
+  }
+  function select(cat) {
+    current = cat;
     document.querySelectorAll('.filters button').forEach(function (b) {
-      b.setAttribute('aria-pressed', String(b === btn));
+      b.setAttribute('aria-pressed', String(b.dataset.filter === cat));
     });
-    document.querySelectorAll('.card').forEach(function (card) {
-      card.hidden = cat !== 'all' && card.dataset.category !== cat;
-    });
+    apply();
+  }
+  document.querySelectorAll('.filters button').forEach(function (btn) {
+    btn.addEventListener('click', function () { select(btn.dataset.filter); });
   });
-});
-"""
+  document.querySelectorAll('[data-show-filter]').forEach(function (link) {
+    link.addEventListener('click', function () { select(link.dataset.showFilter); });
+  });
+  if (more) more.addEventListener('click', function () { expanded = true; apply(); });
+  apply();
+})();
+""" % NEWS_INITIAL_COUNT
 
 
 SALE_LABEL = "セール"
@@ -676,10 +732,53 @@ def render_card(item: Item) -> str:
           <span>{e(item.source)}</span>
           {date_html}
         </div>
-        <h2>{e(item.title)}</h2>
+        <h3>{render_title_link(item.title, item.link)}</h3>
         <p>{e(item.summary)}</p>
         {render_link(item.link, "続きを読む →")}
       </article>"""
+
+
+def render_title_link(title: str, url: str) -> str:
+    """記事タイトルを元記事へのリンクにする（楽天市場ならアフィリエイトリンク）。"""
+    e = html.escape
+    if not url:
+        return e(title)
+    if is_rakuten_ichiba_url(url):
+        return (
+            f'<a href="{e(build_moshimo_rakuten_link(url))}" target="_blank" rel="nofollow sponsored noopener" '
+            f'referrerpolicy="no-referrer-when-downgrade" attributionsrc>{e(title)}</a>'
+        )
+    return f'<a href="{e(url)}" target="_blank" rel="noopener">{e(title)}</a>'
+
+
+def render_sale_section(items: list[Item], exclude_links: set[str]) -> str:
+    """タイトルにセール関連の語を含む最新ニュースを、トップページ上部にまとめて表示する。"""
+    e = html.escape
+    all_sales = [i for i in items if is_sale_title(i.title)]
+    sales = [i for i in all_sales if i.link and i.link not in exclude_links][:SALE_SECTION_COUNT]
+    if not sales:
+        return ""
+    today = datetime.now(JST).date()
+    rows = []
+    for i in sales:
+        when = ""
+        if i.published:
+            when = ("今日 " if i.published.date() == today else i.published.strftime("%m/%d ")) + i.published.strftime("%H:%M")
+        summary = i.summary if len(i.summary) <= 70 else i.summary[:70].rstrip() + "…"
+        rows.append(f"""
+        <article class="sale-item">
+          <div class="sale-meta"><span class="tag deal">{SALE_LABEL}</span><span>{e(i.source)}</span><time>{e(when)}</time></div>
+          <h3>{render_title_link(i.title, i.link)}</h3>
+          <p>{e(summary)}</p>
+        </article>""")
+    return f"""
+    <section class="sales" id="sale" aria-labelledby="sale-title">
+      <h2 class="section-title" id="sale-title">最新のセール速報</h2>
+      <p class="section-note">各メディアの最新ニュースのうち、セール・値下げ・割引に関するものを自動で表示しています。価格は掲載時点のものです。</p>
+      <div class="sale-items">{"".join(rows)}
+      </div>
+      <p class="more-link"><a href="#news" data-show-filter="{SALE_LABEL}">セールのニュースをすべて見る（{len(all_sales)} 件）→</a></p>
+    </section>"""
 
 
 def render_product(p: Product) -> str:
@@ -916,23 +1015,28 @@ def render_page(
     )
     cards = "".join(render_card(i) for i in items) or '<p class="empty">現在表示できる記事がありません。</p>'
     articles = articles or []
-    news_heading = (
-        '\n    <h2 class="section-title">最新ニュース・セール速報</h2>' if (picks or rankings or articles) else ""
-    )
+    # 自動ピックアップに出した記事は、セール速報欄に重ねて出さない
+    picked_links = {p.url for p in (picks or []) if not p.manual}
+    sale_section = render_sale_section(items, picked_links)
+    news_heading = '\n    <h2 class="section-title" id="news">最新ニュース</h2>'
     about_html = e(SITE_ABOUT).replace(e(SITE_TITLE), "<strong>" + e(SITE_TITLE) + "</strong>", 1)
+    nav_links = ([('#sale', 'セール速報')] if sale_section else []) + [("#news", "ニュース"), ("/articles/", "記事一覧")]
+    top_nav = "".join(f'<a href="{href}">{label}</a>' for href, label in nav_links)
     header_html = f"""
   <header>
     <div class="container">
+      <nav class="top-nav" aria-label="サイト内">{top_nav}</nav>
       <h1>{e(SITE_TITLE)}</h1>
       <p>{e(SITE_DESCRIPTION)}</p>
       <div class="about" role="note" aria-label="サイト概要">{about_html}</div>
       <div class="meta">最終更新: {now} (JST) ・ {len(items)} 件</div>
     </div>
   </header>"""
-    main_html = f"""{render_picks(picks or [])}{render_article_section(articles)}{render_rankings(rankings or [])}{news_heading}
+    main_html = f"""{render_picks(picks or [])}{sale_section}{render_article_section(articles)}{render_rankings(rankings or [])}{news_heading}
     <nav class="filters" aria-label="カテゴリ絞り込み">{filter_buttons}</nav>
-    <section class="grid">{cards}
-    </section>"""
+    <section class="grid" aria-labelledby="news">{cards}
+    </section>
+    <div class="more-wrap"><button type="button" id="more-news" class="more-btn" hidden>もっと見る（残り <span class="more-count"></span> 件）</button></div>"""
     return render_document(
         title=f"{SITE_TITLE} | {SITE_DESCRIPTION}",
         description=SITE_ABOUT,
