@@ -117,3 +117,38 @@ def test_feed_include_filter(monkeypatch):
     assert [i.title for i in fb.fetch_feed(feed)] == ["家電記事", "ガジェット記事"]
     feed.pop("include")
     assert len(fb.fetch_feed(feed)) == 3
+
+
+def test_x_post_text_fits_limit(make_item):
+    long = "【本日みつけたお買い得品】" + "とても長い商品名" * 10 + "がセール"
+    sales = [make_item(long, f"https://ex.com/{i}") for i in range(5)]
+    text = fb.build_sale_post_text(sales)
+    assert text.startswith("【今日のセール速報】") and text.endswith(fb.X_HASHTAGS)
+    assert fb.x_weight(text) + fb.X_URL_WEIGHT + 1 <= fb.X_MAX_WEIGHT
+    assert fb.x_weight("abc") == 3 and fb.x_weight("あいう") == 6
+
+
+def test_share_links_and_sale_post_button(make_item):
+    share = fb.render_share_links("記事 & タイトル", fb.SITE_URL + "articles/a/")
+    assert "https://twitter.com/intent/tweet?text=" in share
+    assert "social-plugins.line.me/lineit/share?url=" in share
+    assert "b.hatena.ne.jp/add?mode=confirm" in share
+    assert "%E8%A8%98%E4%BA%8B%20%26%20" in share  # 日本語と & が URL エンコードされている
+    html = fb.render_page([make_item("マウスが20%OFF", "https://ex.com/1")], [], [], [])
+    assert "今日のセール速報を X でポスト" in html
+    assert 'type="application/rss+xml"' in html
+
+
+def test_rss_feed():
+    articles = [
+        Article(slug="new", title="新しい & 記事", date=date(2026, 11, 12), description="説明<b>", body_html=""),
+        Article(slug="old", title="古い記事", date=date(2026, 11, 1), description="d", body_html=""),
+    ]
+    feed = fb.render_rss_feed(articles)
+    doc = xml.dom.minidom.parseString(feed.encode("utf-8"))
+    items = doc.getElementsByTagName("item")
+    assert len(items) == 2
+    assert items[0].getElementsByTagName("title")[0].firstChild.data == "新しい & 記事"
+    assert items[0].getElementsByTagName("link")[0].firstChild.data == fb.SITE_URL + "articles/new/"
+    assert "+0900" in items[0].getElementsByTagName("pubDate")[0].firstChild.data
+    xml.dom.minidom.parseString(fb.render_rss_feed([]).encode("utf-8"))  # 記事0件でも正しい XML

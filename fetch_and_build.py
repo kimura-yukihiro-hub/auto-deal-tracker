@@ -35,7 +35,8 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlparse
+from email.utils import format_datetime
+from urllib.parse import quote, urlparse
 
 import feedparser
 import requests
@@ -490,6 +491,19 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .sale-item h3 a:hover, .card h3 a:hover { color: var(--accent); text-decoration: underline; }
 .sale-item p { margin: 0; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
 .more-wrap { text-align: center; margin: -16px 0 40px; }
+.sale-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 12px 0 0; }
+.more-link-inline { color: var(--accent); font-size: .9rem; }
+.share { display: flex; flex-wrap: wrap; gap: 8px; }
+.share-btn {
+  display: inline-flex; align-items: center; padding: 7px 14px; border-radius: 999px;
+  font-size: .82rem; font-weight: 700; text-decoration: none; color: #fff !important;
+}
+.share-x { background: #111; }
+.share-line { background: #06c755; }
+.share-hatena { background: #00a4de; }
+.share-btn:hover { opacity: .85; }
+.post-share { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+.post-share p { margin: 0 0 10px; font-size: .85rem; color: var(--muted); }
 .more-btn {
   font: inherit; font-size: .95rem; font-weight: 600; padding: 10px 28px; border-radius: 999px; cursor: pointer;
   background: var(--surface); color: var(--accent); border: 1px solid var(--accent);
@@ -767,6 +781,59 @@ def render_title_link(title: str, url: str) -> str:
     return f'<a href="{e(url)}" target="_blank" rel="noopener">{e(title)}</a>'
 
 
+# ---------------------------------------------------------------------------
+# SNS シェア（外部スクリプトを読み込まない、ただのリンク）
+# ---------------------------------------------------------------------------
+
+X_MAX_WEIGHT = 280  # X の投稿上限（日本語は1文字=2、URL は一律23として数える）
+X_URL_WEIGHT = 23
+X_HASHTAGS = "#セール #お買い得"
+
+
+def x_weight(text: str) -> int:
+    """X の文字数の数え方（英数字・記号の一部は1、日本語などは2）で長さを返す。"""
+    total = 0
+    for ch in text:
+        cp = ord(ch)
+        light = cp <= 0x10FF or 0x2000 <= cp <= 0x200D or 0x2010 <= cp <= 0x201F or 0x2032 <= cp <= 0x2037
+        total += 1 if light else 2
+    return total
+
+
+def x_intent_url(text: str, url: str) -> str:
+    return f"https://twitter.com/intent/tweet?text={quote(text, safe='')}&url={quote(url, safe='')}"
+
+
+def build_sale_post_text(sales: list[Item], limit: int = 3) -> str:
+    """「今日のセール速報」の X 投稿文を、上限に収まるように作る。"""
+    budget = X_MAX_WEIGHT - X_URL_WEIGHT - 1  # URL と区切りの空白
+    lines = ["【今日のセール速報】"]
+    for item in sales[:limit]:
+        # 先頭の【本日みつけたお買い得品】のような見出しは文字数がもったいないので省く
+        title = re.sub(r"^【[^】]{1,20}】\s*", "", item.title) or item.title
+        title = title if len(title) <= 40 else title[:39] + "…"
+        candidate = "\n".join(lines + ["・" + title, X_HASHTAGS])
+        if x_weight(candidate) > budget:
+            break
+        lines.append("・" + title)
+    return "\n".join(lines + [X_HASHTAGS])
+
+
+def render_share_links(title: str, url: str, x_text: str | None = None) -> str:
+    """X・LINE・はてなブックマークのシェアボタン。"""
+    e = html.escape
+    x_href = x_intent_url(x_text if x_text is not None else title, url)
+    line_href = f"https://social-plugins.line.me/lineit/share?url={quote(url, safe='')}"
+    hatena_href = f"https://b.hatena.ne.jp/add?mode=confirm&url={quote(url, safe='')}&title={quote(title, safe='')}"
+    return (
+        '<div class="share" role="group" aria-label="シェア">'
+        f'<a class="share-btn share-x" href="{e(x_href)}" target="_blank" rel="noopener">X でポスト</a>'
+        f'<a class="share-btn share-line" href="{e(line_href)}" target="_blank" rel="noopener">LINE で送る</a>'
+        f'<a class="share-btn share-hatena" href="{e(hatena_href)}" target="_blank" rel="noopener">はてブ</a>'
+        "</div>"
+    )
+
+
 def render_sale_section(items: list[Item], exclude_links: set[str]) -> str:
     """タイトルにセール関連の語を含む最新ニュースを、トップページ上部にまとめて表示する。"""
     e = html.escape
@@ -793,7 +860,10 @@ def render_sale_section(items: list[Item], exclude_links: set[str]) -> str:
       <p class="section-note">各メディアの最新ニュースのうち、セール・値下げ・割引に関するものを自動で表示しています。価格は掲載時点のものです。</p>
       <div class="sale-items">{"".join(rows)}
       </div>
-      <p class="more-link"><a href="#news" data-show-filter="{SALE_LABEL}">セールのニュースをすべて見る（{len(all_sales)} 件）→</a></p>
+      <div class="sale-footer">
+        <a class="share-btn share-x" href="{e(x_intent_url(build_sale_post_text(sales), SITE_URL))}" target="_blank" rel="noopener">今日のセール速報を X でポスト</a>
+        <a class="more-link-inline" href="#news" data-show-filter="{SALE_LABEL}">セールのニュースをすべて見る（{len(all_sales)} 件）→</a>
+      </div>
     </section>"""
 
 
@@ -901,7 +971,7 @@ def render_footer() -> str:
         <section>
           <h3>運営者情報</h3>
           <p>{e(OPERATOR_NAME)}</p>
-          <p><a href="/">トップページ</a> ・ <a href="/articles/">記事一覧</a></p>
+          <p><a href="/">トップページ</a> ・ <a href="/articles/">記事一覧</a> ・ <a href="/feed.xml">RSS</a></p>
         </section>
         <section>
           <h3>お問い合わせ</h3>
@@ -952,6 +1022,7 @@ def render_document(
   <title>{e(title)}</title>
   <meta name="description" content="{e(description)}">
   <link rel="canonical" href="{e(url)}">
+  <link rel="alternate" type="application/rss+xml" title="{e(SITE_TITLE)} の記事" href="{e(SITE_URL)}feed.xml">
   <meta name="google-site-verification" content="{e(GOOGLE_SITE_VERIFICATION)}">
   <meta name="msvalidate.01" content="{e(BING_SITE_VERIFICATION)}">
   <meta name="theme-color" content="#2563eb">
@@ -1107,6 +1178,7 @@ def render_article_page(a: Article, articles: list[Article]) -> str:
       </header>
       {pr_note}
       <div class="prose">{a.body_html}</div>
+      <div class="post-share"><p>この記事が役に立ったらシェアしてください</p>{render_share_links(a.title, SITE_URL + a.path, f"{a.title} | {SITE_TITLE}")}</div>
     </article>{related}"""
     return render_document(
         title=f"{a.title} | {SITE_TITLE}",
@@ -1188,6 +1260,42 @@ def write_article_pages(articles: list[Article]) -> None:
         (page_dir / "index.html").write_text(render_article_page(a, articles), encoding="utf-8")
 
 
+FEED_MAX_ITEMS = 20
+
+
+def render_rss_feed(articles: list[Article]) -> str:
+    """編集部の記事の RSS 2.0 フィード（ニュースは他サイトの記事なので含めない）。"""
+    e = html.escape
+
+    def rfc822(d) -> str:
+        return format_datetime(datetime(d.year, d.month, d.day, 7, 0, tzinfo=JST))
+
+    items = "".join(
+        f"""
+    <item>
+      <title>{e(a.title)}</title>
+      <link>{e(SITE_URL + a.path)}</link>
+      <guid isPermaLink="true">{e(SITE_URL + a.path)}</guid>
+      <pubDate>{rfc822(a.date)}</pubDate>
+      <description>{e(a.description)}</description>
+    </item>"""
+        for a in articles[:FEED_MAX_ITEMS]
+    )
+    last = rfc822(articles[0].last_modified) if articles else rfc822(datetime.now(JST).date())
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>{e(SITE_TITLE)}</title>
+    <link>{e(SITE_URL)}</link>
+    <description>{e(SITE_DESCRIPTION)}</description>
+    <language>ja</language>
+    <lastBuildDate>{last}</lastBuildDate>
+    <atom:link href="{e(SITE_URL)}feed.xml" rel="self" type="application/rss+xml"/>{items}
+  </channel>
+</rss>
+"""
+
+
 def write_seo_files(articles: list[Article] | None = None) -> None:
     """検索エンジン向けの robots.txt・sitemap.xml・IndexNow キーファイルを dist/ に出力する。"""
     out = OUTPUT_PATH.parent
@@ -1237,6 +1345,7 @@ def main() -> int:
     write_article_pages(articles)
     (OUTPUT_PATH.parent / "404.html").write_text(render_not_found_page(), encoding="utf-8")
     write_seo_files(articles)
+    (OUTPUT_PATH.parent / "feed.xml").write_text(render_rss_feed(articles), encoding="utf-8")
     print(f"[INFO] {OUTPUT_PATH} を生成しました（{len(items)} 件）")
     return 0
 

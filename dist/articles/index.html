@@ -6,6 +6,7 @@
   <title>記事一覧 | セールの見張り番</title>
   <meta name="description" content="セールの見張り番 編集部の記事一覧。スマホ・パソコン・家電の選び方やセール情報をまとめています。">
   <link rel="canonical" href="https://auto-deal-tracker.pages.dev/articles/">
+  <link rel="alternate" type="application/rss+xml" title="セールの見張り番 の記事" href="https://auto-deal-tracker.pages.dev/feed.xml">
   <meta name="google-site-verification" content="PEJzJAjl6FvLmRWf8WOBif-XcYhrC2KI0lsWLUL-MCM">
   <meta name="msvalidate.01" content="3F76F98F782898A2AFB06DB65D9B5FEC">
   <meta name="theme-color" content="#2563eb">
@@ -81,6 +82,19 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .sale-item h3 a:hover, .card h3 a:hover { color: var(--accent); text-decoration: underline; }
 .sale-item p { margin: 0; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
 .more-wrap { text-align: center; margin: -16px 0 40px; }
+.sale-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 12px 0 0; }
+.more-link-inline { color: var(--accent); font-size: .9rem; }
+.share { display: flex; flex-wrap: wrap; gap: 8px; }
+.share-btn {
+  display: inline-flex; align-items: center; padding: 7px 14px; border-radius: 999px;
+  font-size: .82rem; font-weight: 700; text-decoration: none; color: #fff !important;
+}
+.share-x { background: #111; }
+.share-line { background: #06c755; }
+.share-hatena { background: #00a4de; }
+.share-btn:hover { opacity: .85; }
+.post-share { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
+.post-share p { margin: 0 0 10px; font-size: .85rem; color: var(--muted); }
 .more-btn {
   font: inherit; font-size: .95rem; font-weight: 600; padding: 10px 28px; border-radius: 999px; cursor: pointer;
   background: var(--surface); color: var(--accent); border: 1px solid var(--accent);
@@ -290,7 +304,7 @@ footer a { color: var(--accent); }
         <section>
           <h3>運営者情報</h3>
           <p>セールの見張り番 運営事務局</p>
-          <p><a href="/">トップページ</a> ・ <a href="/articles/">記事一覧</a></p>
+          <p><a href="/">トップページ</a> ・ <a href="/articles/">記事一覧</a> ・ <a href="/feed.xml">RSS</a></p>
         </section>
         <section>
           <h3>お問い合わせ</h3>
