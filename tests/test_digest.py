@@ -12,11 +12,11 @@ SUNDAY = date(2026, 11, 15)
 def items_for_week():
     J = fb.JST
     return [
-        fb.Item("充電器がセールで33％オフ <速報> & [限定]", "要約A", "https://ex.com/1", datetime(2026, 11, 9, 10, tzinfo=J), "ITmedia Mobile", "ガジェット"),
-        fb.Item("【本日みつけたお買い得品】*約2万円オフ*のKindle", "要約B", "https://ex.com/2", datetime(2026, 11, 10, 9, tzinfo=J), "PC Watch", "ガジェット"),
-        fb.Item("新しいCPUを発表", "要約C", "https://ex.com/3", datetime(2026, 11, 10, 9, tzinfo=J), "PC Watch", "ガジェット"),
-        fb.Item("マウスが20%OFFのタイムセール", "要約D", "https://ex.com/4", datetime(2026, 11, 11, 9, tzinfo=J), "GetNavi web", "ガジェット"),
-        fb.Item("古い記事のセール", "要約E", "https://ex.com/5", datetime(2026, 10, 1, 9, tzinfo=J), "GetNavi web", "ガジェット"),
+        fb.Item("充電器がセールで33％オフ <速報> & [限定]", "要約A", "https://ex.com/1", datetime(2026, 11, 9, 10, tzinfo=J), "ITmedia Mobile", "製品ニュース"),
+        fb.Item("【本日みつけたお買い得品】*約2万円オフ*のKindle", "要約B", "https://ex.com/2", datetime(2026, 11, 10, 9, tzinfo=J), "PC Watch", "製品ニュース"),
+        fb.Item("新しいCPUを発表", "要約C", "https://ex.com/3", datetime(2026, 11, 10, 9, tzinfo=J), "PC Watch", "製品ニュース"),
+        fb.Item("マウスが20%OFFのタイムセール", "要約D", "https://ex.com/4", datetime(2026, 11, 11, 9, tzinfo=J), "GetNavi web", "製品ニュース"),
+        fb.Item("古い記事のセール", "要約E", "https://ex.com/5", datetime(2026, 10, 1, 9, tzinfo=J), "GetNavi web", "製品ニュース"),
     ]
 
 

@@ -1,5 +1,5 @@
 {
-  "_help": "編集部ピックアップ。items を空 [] にすると、ガジェット/セールの最新記事3件が自動で表示されます。title と url は必須。楽天市場の URL は、もしもアフィリエイトのリンクに自動変換されます。任意項目: comment（紹介文）、price（数値なら ¥ 付きで表示）、image（https の画像 URL）、label（既定: 編集部おすすめ）、expires（YYYY-MM-DD。この日を過ぎると非表示）",
+  "_help": "編集部ピックアップ。items を空 [] にすると、セール関連の最新ニュース3件が自動で表示されます。title と url は必須。楽天市場の URL は、もしもアフィリエイトのリンクに自動変換されます。任意項目: comment（紹介文）、price（数値なら ¥ 付きで表示）、image（https の画像 URL）、label（既定: 編集部おすすめ）、expires（YYYY-MM-DD。この日を過ぎると非表示）",
   "items": [
     {
       "title": "Anker の USB-C 急速充電器",

@@ -18,7 +18,7 @@ def test_featured_json_priority_and_fallback(tmp_path, monkeypatch, make_item):
     items = [
         make_item("新製品発表", "https://ex.com/1", hour=12),
         make_item("マウスが20%OFF", "https://ex.com/2", hour=11),
-        make_item("テックの話題", "https://ex.com/3", category="テック", hour=10),
+        make_item("ITの話題", "https://ex.com/3", category="IT・ネット", hour=10),
         make_item("HDDが特売", "https://ex.com/4", hour=9),
     ]
     featured = tmp_path / "featured.json"
@@ -38,13 +38,13 @@ def test_featured_json_priority_and_fallback(tmp_path, monkeypatch, make_item):
         else:
             featured.write_text(content, encoding="utf-8")
         picks = fb.select_picks(items)
-        # セール記事を優先し、足りない分をガジェット記事で補う
+        # セール記事を優先し、足りない分を製品ニュースで補う
         assert [p.title for p in picks] == ["マウスが20%OFF", "HDDが特売", "新製品発表"]
         assert not any(p.manual for p in picks)
 
 
 def test_top_page_structure(make_item):
-    items = [make_item(f"ニュース{i}", f"https://ex.com/{i}", category="テック" if i % 2 else "ガジェット", hour=i % 23)
+    items = [make_item(f"ニュース{i}", f"https://ex.com/{i}", category="IT・ネット" if i % 2 else "製品ニュース", hour=i % 23)
              for i in range(25)]
     items.append(make_item("<script>alert(1)</script>がセール", "https://ex.com/x"))
     html = fb.render_page(items, [], [], [])
@@ -96,3 +96,24 @@ def test_footer_contact(monkeypatch):
     footer = fb.render_footer()
     assert '<a class="contact-btn" href="https://forms.gle/example" target="_blank" rel="noopener">' in footer
     assert "準備中" not in footer
+
+
+def test_feed_include_filter(monkeypatch):
+    rss = """<?xml version="1.0"?><rss version="2.0"><channel><title>t</title>
+    <item><title>グルメ記事</title><link>https://getnavi.jp/gourmet/1/</link></item>
+    <item><title>家電記事</title><link>https://getnavi.jp/appliances/2/</link></item>
+    <item><title>ガジェット記事</title><link>https://getnavi.jp/gadgets/3/</link></item>
+    </channel></rss>""".encode("utf-8")
+
+    class Resp:
+        content = rss
+
+        def raise_for_status(self):
+            pass
+
+    monkeypatch.setattr(fb.requests, "get", lambda *a, **k: Resp())
+    feed = {"name": "GetNavi web", "category": "製品ニュース", "url": "https://getnavi.jp/feed/",
+            "include": r"^https://getnavi\.jp/(?:gadgets|appliances)/"}
+    assert [i.title for i in fb.fetch_feed(feed)] == ["家電記事", "ガジェット記事"]
+    feed.pop("include")
+    assert len(fb.fetch_feed(feed)) == 3

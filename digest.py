@@ -91,14 +91,14 @@ def build_digest_markdown(entries: list[dict], picks, start: date, end: date) ->
     period = f"{start.month}/{start.day}〜{end.month}/{end.day}"
     lines = [
         "---",
-        f"title: 今週のガジェット・セール情報まとめ（{period}）",
+        f"title: 今週のセール・値下げ情報まとめ（{period}）",
         f"date: {end.isoformat()}",
-        f"description: {period}に主要テックメディアで報じられたガジェットのセール・値下げ情報 {len(entries)} 件をまとめました。",
+        f"description: {period}に主要IT・家電メディアで報じられた、スマホ・パソコン・家電のセール・値下げ情報 {len(entries)} 件をまとめました。",
         "tags: セールまとめ, 週刊",
         "---",
         "",
         f"{start.month}月{start.day}日から{end.month}月{end.day}日までの1週間に、"
-        "主要テック・ガジェット系メディアで報じられたセール・値下げ情報をまとめました。",
+        "主要IT・家電メディアで報じられた、スマホ・パソコン・家電のセール・値下げ情報をまとめました。",
         "",
         "> この記事は、当サイトが毎日収集しているニュースのうち、タイトルにセール・値下げ関連の語を含むものを"
         "自動で集計して作成しています。価格やセール期間は各記事の掲載時点のものです。"

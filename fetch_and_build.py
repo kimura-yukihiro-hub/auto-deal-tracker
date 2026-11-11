@@ -49,17 +49,18 @@ from digest import is_sale_title, maybe_write_weekly_digest, update_log
 # ---------------------------------------------------------------------------
 
 FEEDS: list[dict[str, str]] = [
-    {"name": "ITmedia NEWS", "category": "テック", "url": "https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml"},
-    {"name": "GIGAZINE", "category": "テック", "url": "https://gigazine.net/news/rss_2.0/"},
-    {"name": "Publickey", "category": "テック", "url": "https://www.publickey1.jp/atom.xml"},
-    {"name": "ギズモード・ジャパン", "category": "ガジェット", "url": "https://www.gizmodo.jp/index.xml"},
-    {"name": "ITmedia Mobile", "category": "ガジェット", "url": "https://rss.itmedia.co.jp/rss/2.0/mobile.xml"},
-    {"name": "PC Watch", "category": "ガジェット", "url": "https://pc.watch.impress.co.jp/data/rss/1.0/pcw/feed.rdf"},
-    {"name": "AKIBA PC Hotline!", "category": "ガジェット", "url": "https://akiba-pc.watch.impress.co.jp/data/rss/1.0/ah/feed.rdf"},
-    {"name": "GetNavi web", "category": "ガジェット", "url": "https://getnavi.jp/feed/"},
+    # 読者像: スマホ・パソコン・家電を賢く買いたい人（詳しくない人・仕事で PC を使う人）
+    # 2026-11-11 見直し: GIGAZINE（話題が幅広すぎる）・Publickey（開発者向け）・AKIBA PC Hotline!（自作 PC 向け）を除外
+    {"name": "ITmedia NEWS", "category": "IT・ネット", "url": "https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml"},
+    {"name": "ギズモード・ジャパン", "category": "製品ニュース", "url": "https://www.gizmodo.jp/index.xml"},
+    {"name": "ITmedia Mobile", "category": "製品ニュース", "url": "https://rss.itmedia.co.jp/rss/2.0/mobile.xml"},
+    {"name": "PC Watch", "category": "製品ニュース", "url": "https://pc.watch.impress.co.jp/data/rss/1.0/pcw/feed.rdf"},
+    # GetNavi web は家電・デジタル製品のジャンルだけ取り込む（グルメ・ファッション等は除外）
+    {"name": "GetNavi web", "category": "製品ニュース", "url": "https://getnavi.jp/feed/",
+     "include": r"^https://getnavi\.jp/(?:gadgets|appliances)/"},
 ]
 
-SITE_TITLE = "Auto Deal Tracker"
+SITE_TITLE = "セールの見張り番"
 # 公開URL（末尾スラッシュ付き）。独自ドメインに移行したら環境変数 SITE_URL で上書きする
 SITE_URL = os.environ.get("SITE_URL", "").strip() or "https://auto-deal-tracker.pages.dev/"
 if not SITE_URL.endswith("/"):
@@ -71,12 +72,13 @@ BING_SITE_VERIFICATION = "3F76F98F782898A2AFB06DB65D9B5FEC"
 # IndexNow（Bing 等へ更新を通知）の所有確認キー。dist/{キー}.txt として公開する（公開して問題ない値）
 INDEXNOW_KEY = "c4cf435d8df235b2e9df3d60fb44feb3"
 OGP_IMAGE = "ogp.png"  # dist/ogp.png（assets/ogp-template.html から作成した静的画像）
-SITE_DESCRIPTION = "テックニュースとセール速報を毎朝7時に自動でまとめてお届け"
+SITE_DESCRIPTION = "スマホ・パソコン・家電のセールと、買い物に役立つ最新ニュースを毎朝チェック"
 SITE_ABOUT = (
-    "Auto Deal Tracker は、主要テックメディアや公式発表から最新のガジェット情報・"
-    "セール速報を自動収集・配信するキュレーションメディアです。"
+    "セールの見張り番 は、スマホ・パソコン・家電を少しでもお得に買いたい人のために、"
+    "主要IT・家電メディアのセール情報と買い物に役立つニュースを毎朝自動で集め、"
+    "編集部のおすすめとあわせてお届けするサイトです。"
 )
-OPERATOR_NAME = "Auto Deal Tracker 運営事務局"
+OPERATOR_NAME = "セールの見張り番 運営事務局"
 # 連絡先メールアドレス。設定すると「お問い合わせ」欄に mailto リンクを表示する。
 CONTACT_EMAIL = os.environ.get("CONTACT_EMAIL", "")
 # お問い合わせフォーム（Google フォームなど）の公開 URL。設定するとフッターにボタンを表示する
@@ -108,7 +110,7 @@ OUTPUT_PATH = BASE_DIR / "dist" / "index.html"
 FEATURED_PATH = BASE_DIR / "data" / "featured.json"
 MAX_FEATURED = 6
 FALLBACK_PICK_COUNT = 3
-FALLBACK_PICK_CATEGORY = "ガジェット"
+FALLBACK_PICK_CATEGORY = "製品ニュース"
 
 # 独自記事（articles/*.md → dist/articles/<slug>/index.html）
 ARTICLES_DIR = BASE_DIR / "articles"
@@ -184,7 +186,10 @@ def fetch_feed(feed: dict[str, str]) -> list[Item]:
         return []
 
     items: list[Item] = []
-    for entry in parsed.entries[:MAX_ITEMS_PER_FEED]:
+    entries = parsed.entries
+    if feed.get("include"):
+        entries = [en for en in entries if re.search(feed["include"], en.get("link", ""))]
+    for entry in entries[:MAX_ITEMS_PER_FEED]:
         title = strip_html(entry.get("title", "")) or "(無題)"
         raw_summary = entry.get("summary") or entry.get("description") or ""
         if not raw_summary and entry.get("content"):
@@ -285,7 +290,7 @@ def load_featured(path: Path | None = None) -> list[Pick]:
 
 
 def select_picks(items: list[Item]) -> list[Pick]:
-    """手動ピックアップがあれば優先し、なければセール記事（足りなければガジェット記事）の最新から自動で選ぶ。"""
+    """手動ピックアップがあれば優先し、なければセール記事（足りなければ製品ニュース）の最新から自動で選ぶ。"""
     manual = load_featured()
     if manual:
         print(f"[INFO] 編集部ピックアップ: featured.json から {len(manual)} 件")
@@ -718,7 +723,7 @@ JS = """
 
 
 SALE_LABEL = "セール"
-FILTER_ORDER = [SALE_LABEL, "ガジェット", "テック"]
+FILTER_ORDER = [SALE_LABEL, "製品ニュース", "IT・ネット"]
 
 
 def display_category(item: Item) -> str:
@@ -841,7 +846,7 @@ def render_picks(picks: list[Pick]) -> str:
     note = (
         "編集部が注目している商品・セールをピックアップしています。価格・在庫は変動するため、購入前にリンク先でご確認ください。"
         if picks[0].manual
-        else "ガジェット・セール関連の最新記事から自動でピックアップしています。"
+        else "セール・値下げに関する最新ニュースから自動でピックアップしています。"
     )
     return f"""
     <section class="pickup" aria-labelledby="pickup-title">
@@ -1131,12 +1136,12 @@ def render_article_index(articles: list[Article]) -> str:
     main_html = f"""
     <nav class="breadcrumb" aria-label="パンくずリスト"><a href="/">トップ</a> › <span>記事一覧</span></nav>
     <h1 class="page-title">記事一覧</h1>
-    <p class="section-note">{html.escape(OPERATOR_NAME)} が書いたガジェット・セール情報の記事です。</p>
+    <p class="section-note">{html.escape(OPERATOR_NAME)} が書いた、スマホ・パソコン・家電の選び方やセール情報の記事です。</p>
     <div class="article-cards">{cards}
     </div>"""
     return render_document(
         title=f"記事一覧 | {SITE_TITLE}",
-        description=f"{SITE_TITLE} 編集部の記事一覧。ガジェットの選び方やセール情報をまとめています。",
+        description=f"{SITE_TITLE} 編集部の記事一覧。スマホ・パソコン・家電の選び方やセール情報をまとめています。",
         path="articles/",
         header_html=render_site_header(),
         main_html=main_html,

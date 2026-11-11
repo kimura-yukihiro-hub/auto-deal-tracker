@@ -15,7 +15,7 @@ title: ここに記事タイトル
 date: 2026-11-11
 updated:
 description: 記事の紹介文を 80〜120 文字くらいで書きます。
-tags: ガジェット, セール
+tags: スマホ, セール
 image:
 draft: true
 ---
