@@ -6,6 +6,11 @@ on:
     - cron: "43 21 * * *" # 毎日 日本時間 6:43（本番）
     - cron: "13 23 * * *" # 毎日 日本時間 8:13（本番が破棄された場合の予備）
   workflow_dispatch: # 手動実行も可能にする
+    inputs:
+      force_ai_draft:
+        description: "曜日に関係なく AI 下書きを作成する（動作確認用）"
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -14,12 +19,15 @@ on:
       - "notify_indexnow.py"
       - "articles.py"
       - "affiliate.py"
+      - "digest.py"
+      - "ai_draft.py"
       - "articles/**" # 記事を追加・編集したらすぐ公開する
       - "requirements.txt"
       - ".github/workflows/update.yml"
 
 permissions:
   contents: write
+  issues: write # AI 下書きができたことを Issue で知らせる
 
 concurrency:
   group: update-site
@@ -49,6 +57,15 @@ jobs:
           RAKUTEN_SITE_URL: ${{ secrets.RAKUTEN_SITE_URL }}
         run: python fetch_and_build.py
 
+      - name: Create AI draft (Sundays)
+        id: ai
+        continue-on-error: true # AI の失敗でサイト更新を止めない
+        timeout-minutes: 5
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FORCE_AI_DRAFT: ${{ inputs.force_ai_draft && '1' || '' }}
+        run: python ai_draft.py
+
       - name: Commit and push if changed
         id: commit
         run: |
@@ -72,3 +89,10 @@ jobs:
         continue-on-error: true # 通知の失敗でサイト更新を失敗扱いにしない
         timeout-minutes: 12
         run: python notify_indexnow.py
+
+      - name: Open issue for AI draft
+        if: steps.ai.outputs.draft != '' && steps.commit.outputs.changed == 'true'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python ai_draft.py --notify "${{ steps.ai.outputs.draft }}"
