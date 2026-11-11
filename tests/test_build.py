@@ -152,3 +152,14 @@ def test_rss_feed():
     assert items[0].getElementsByTagName("link")[0].firstChild.data == fb.SITE_URL + "articles/new/"
     assert "+0900" in items[0].getElementsByTagName("pubDate")[0].firstChild.data
     xml.dom.minidom.parseString(fb.render_rss_feed([]).encode("utf-8"))  # 記事0件でも正しい XML
+
+
+def test_x_account_links(make_item):
+    page = fb.render_page([make_item("マウスが20%OFF", "https://ex.com/1")], [], [], [])
+    assert '<meta name="twitter:site" content="@mihariban_sale">' in page
+    assert 'href="https://x.com/mihariban_sale"' in page  # フッターのフォローリンク
+    # 自分で投稿する「今日のセール速報」には via を付けない
+    sale_btn = page.split("今日のセール速報を X でポスト")[0].rsplit("<a ", 1)[1]
+    assert "via=" not in sale_btn
+    # 記事のシェアボタンには via を付ける
+    assert "&amp;via=mihariban_sale" in fb.render_share_links("t", fb.SITE_URL)

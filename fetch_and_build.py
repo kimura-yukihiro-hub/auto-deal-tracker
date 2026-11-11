@@ -504,6 +504,12 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .share-btn:hover { opacity: .85; }
 .post-share { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
 .post-share p { margin: 0 0 10px; font-size: .85rem; color: var(--muted); }
+.post-share .follow-note { margin: 14px 0 0; }
+.follow-x {
+  display: inline-block; padding: 6px 14px; border-radius: 999px; background: #111;
+  color: #fff !important; text-decoration: none; font-weight: 700; font-size: .8rem;
+}
+.follow-x:hover { opacity: .85; }
 .more-btn {
   font: inherit; font-size: .95rem; font-weight: 600; padding: 10px 28px; border-radius: 999px; cursor: pointer;
   background: var(--surface); color: var(--accent); border: 1px solid var(--accent);
@@ -788,6 +794,8 @@ def render_title_link(title: str, url: str) -> str:
 X_MAX_WEIGHT = 280  # X の投稿上限（日本語は1文字=2、URL は一律23として数える）
 X_URL_WEIGHT = 23
 X_HASHTAGS = "#セール #お買い得"
+X_ACCOUNT = "mihariban_sale"  # サイト公式の X アカウント（@ なし）
+X_PROFILE_URL = f"https://x.com/{X_ACCOUNT}"
 
 
 def x_weight(text: str) -> int:
@@ -800,8 +808,10 @@ def x_weight(text: str) -> int:
     return total
 
 
-def x_intent_url(text: str, url: str) -> str:
-    return f"https://twitter.com/intent/tweet?text={quote(text, safe='')}&url={quote(url, safe='')}"
+def x_intent_url(text: str, url: str, via: str = "") -> str:
+    """X の投稿画面を開く URL。via を付けると投稿の末尾に「via @アカウント」が入る。"""
+    href = f"https://twitter.com/intent/tweet?text={quote(text, safe='')}&url={quote(url, safe='')}"
+    return href + (f"&via={quote(via, safe='')}" if via else "")
 
 
 def build_sale_post_text(sales: list[Item], limit: int = 3) -> str:
@@ -822,7 +832,7 @@ def build_sale_post_text(sales: list[Item], limit: int = 3) -> str:
 def render_share_links(title: str, url: str, x_text: str | None = None) -> str:
     """X・LINE・はてなブックマークのシェアボタン。"""
     e = html.escape
-    x_href = x_intent_url(x_text if x_text is not None else title, url)
+    x_href = x_intent_url(x_text if x_text is not None else title, url, via=X_ACCOUNT)
     line_href = f"https://social-plugins.line.me/lineit/share?url={quote(url, safe='')}"
     hatena_href = f"https://b.hatena.ne.jp/add?mode=confirm&url={quote(url, safe='')}&title={quote(title, safe='')}"
     return (
@@ -972,6 +982,7 @@ def render_footer() -> str:
           <h3>運営者情報</h3>
           <p>{e(OPERATOR_NAME)}</p>
           <p><a href="/">トップページ</a> ・ <a href="/articles/">記事一覧</a> ・ <a href="/feed.xml">RSS</a></p>
+          <p><a class="follow-x" href="{X_PROFILE_URL}" target="_blank" rel="noopener">X でフォロー（@{X_ACCOUNT}）</a></p>
         </section>
         <section>
           <h3>お問い合わせ</h3>
@@ -1037,6 +1048,7 @@ def render_document(
   <meta property="og:image:height" content="630">
   <meta property="og:locale" content="ja_JP">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@{X_ACCOUNT}">
   <script type="application/ld+json">{_json_ld(json_ld)}</script>
   <style>{CSS}</style>
 </head>
@@ -1178,7 +1190,8 @@ def render_article_page(a: Article, articles: list[Article]) -> str:
       </header>
       {pr_note}
       <div class="prose">{a.body_html}</div>
-      <div class="post-share"><p>この記事が役に立ったらシェアしてください</p>{render_share_links(a.title, SITE_URL + a.path, f"{a.title} | {SITE_TITLE}")}</div>
+      <div class="post-share"><p>この記事が役に立ったらシェアしてください</p>{render_share_links(a.title, SITE_URL + a.path, f"{a.title} | {SITE_TITLE}")}
+        <p class="follow-note">毎朝のセール速報は <a href="{X_PROFILE_URL}" target="_blank" rel="noopener">X（@{X_ACCOUNT}）</a> でもお届けしています。</p></div>
     </article>{related}"""
     return render_document(
         title=f"{a.title} | {SITE_TITLE}",
