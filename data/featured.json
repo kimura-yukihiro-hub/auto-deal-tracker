@@ -2,22 +2,20 @@
   "_help": "編集部ピックアップ。items を空 [] にすると、セール関連の最新ニュース3件が自動で表示されます。title と url は必須。楽天市場の URL は、もしもアフィリエイトのリンクに自動変換されます。任意項目: comment（紹介文）、price（数値なら ¥ 付きで表示）、image（https の画像 URL）、label（既定: 編集部おすすめ）、expires（YYYY-MM-DD。この日を過ぎると非表示）",
   "items": [
     {
-      "title": "Anker の USB-C 急速充電器",
-      "comment": "スマホからノート PC までまとめて充電できる定番ブランド。楽天市場の検索結果で、ポイント倍率やショップごとの価格を比べられます。",
-      "url": "https://search.rakuten.co.jp/search/mall/Anker+USB-C+充電器/",
-      "label": "編集部おすすめ"
+      "title": "3in1 折りたたみワイヤレス充電器 W79",
+      "comment": "iPhone・AirPods・Apple Watch の3台を、置くだけで同時に充電できるワイヤレス充電器（MagSafe 対応・最大15W）。折りたたむとポケットに入る大きさで、出張や旅行にも持ち出しやすいタイプです。",
+      "url": "https://item.rakuten.co.jp/chips/zz-w79-blk/",
+      "image": "https://shop.r10s.jp/chips/cabinet/syohin/new/zz-a5/zzw79no1.jpg",
+      "label": "ブラックフライデー注目",
+      "expires": "2026-11-30"
     },
     {
-      "title": "Anker のモバイルバッテリー",
-      "comment": "外出先での充電切れ対策に。容量や出力の異なるモデルを楽天市場で一覧できます。",
-      "url": "https://search.rakuten.co.jp/search/mall/Anker+モバイルバッテリー/",
-      "label": "編集部おすすめ"
-    },
-    {
-      "title": "Anker Soundcore のワイヤレスイヤホン",
-      "comment": "ノイズキャンセリング対応モデルなど種類が豊富なシリーズ。セール中のショップがないか楽天市場でチェックできます。",
-      "url": "https://search.rakuten.co.jp/search/mall/Anker+Soundcore+イヤホン/",
-      "label": "編集部おすすめ"
+      "title": "3in1 折りたたみワイヤレス充電器 CX",
+      "comment": "こちらも iPhone・AirPods・Apple Watch の3台を同時に充電できる折りたたみ式（MagSafe 対応・最大15W）。ショップのクーポンが配布されていると、さらに安く買えることがあります。",
+      "url": "https://item.rakuten.co.jp/aquilaria/cxjt/",
+      "image": "https://shop.r10s.jp/aquilaria/cabinet/13880063/1.jpg",
+      "label": "ブラックフライデー注目",
+      "expires": "2026-11-30"
     }
   ]
 }
