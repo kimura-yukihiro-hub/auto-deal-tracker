@@ -42,7 +42,7 @@ import requests
 
 from affiliate import build_moshimo_rakuten_link, is_rakuten_ichiba_url, moshimo_rakuten_impression_url
 from articles import Article, load_articles
-from digest import maybe_write_weekly_digest, update_log
+from digest import is_sale_title, maybe_write_weekly_digest, update_log
 
 # ---------------------------------------------------------------------------
 # 設定
@@ -52,11 +52,11 @@ FEEDS: list[dict[str, str]] = [
     {"name": "ITmedia NEWS", "category": "テック", "url": "https://rss.itmedia.co.jp/rss/2.0/news_bursts.xml"},
     {"name": "GIGAZINE", "category": "テック", "url": "https://gigazine.net/news/rss_2.0/"},
     {"name": "Publickey", "category": "テック", "url": "https://www.publickey1.jp/atom.xml"},
-    {"name": "ギズモード・ジャパン", "category": "ガジェット/セール", "url": "https://www.gizmodo.jp/index.xml"},
-    {"name": "ITmedia Mobile", "category": "ガジェット/セール", "url": "https://rss.itmedia.co.jp/rss/2.0/mobile.xml"},
-    {"name": "PC Watch", "category": "ガジェット/セール", "url": "https://pc.watch.impress.co.jp/data/rss/1.0/pcw/feed.rdf"},
-    {"name": "AKIBA PC Hotline!", "category": "ガジェット/セール", "url": "https://akiba-pc.watch.impress.co.jp/data/rss/1.0/ah/feed.rdf"},
-    {"name": "GetNavi web", "category": "ガジェット/セール", "url": "https://getnavi.jp/feed/"},
+    {"name": "ギズモード・ジャパン", "category": "ガジェット", "url": "https://www.gizmodo.jp/index.xml"},
+    {"name": "ITmedia Mobile", "category": "ガジェット", "url": "https://rss.itmedia.co.jp/rss/2.0/mobile.xml"},
+    {"name": "PC Watch", "category": "ガジェット", "url": "https://pc.watch.impress.co.jp/data/rss/1.0/pcw/feed.rdf"},
+    {"name": "AKIBA PC Hotline!", "category": "ガジェット", "url": "https://akiba-pc.watch.impress.co.jp/data/rss/1.0/ah/feed.rdf"},
+    {"name": "GetNavi web", "category": "ガジェット", "url": "https://getnavi.jp/feed/"},
 ]
 
 SITE_TITLE = "Auto Deal Tracker"
@@ -106,7 +106,7 @@ OUTPUT_PATH = BASE_DIR / "dist" / "index.html"
 FEATURED_PATH = BASE_DIR / "data" / "featured.json"
 MAX_FEATURED = 6
 FALLBACK_PICK_COUNT = 3
-FALLBACK_PICK_CATEGORY = "ガジェット/セール"
+FALLBACK_PICK_CATEGORY = "ガジェット"
 
 # 独自記事（articles/*.md → dist/articles/<slug>/index.html）
 ARTICLES_DIR = BASE_DIR / "articles"
@@ -279,11 +279,13 @@ def load_featured(path: Path | None = None) -> list[Pick]:
 
 
 def select_picks(items: list[Item]) -> list[Pick]:
-    """手動ピックアップがあれば優先し、なければ「ガジェット/セール」の最新記事から自動で選ぶ。"""
+    """手動ピックアップがあれば優先し、なければセール記事（足りなければガジェット記事）の最新から自動で選ぶ。"""
     manual = load_featured()
     if manual:
         print(f"[INFO] 編集部ピックアップ: featured.json から {len(manual)} 件")
         return manual
+    candidates = [i for i in items if i.link and is_sale_title(i.title)]
+    candidates += [i for i in items if i.link and i.category == FALLBACK_PICK_CATEGORY and i not in candidates]
     auto = [
         Pick(
             title=item.title,
@@ -294,8 +296,7 @@ def select_picks(items: list[Item]) -> list[Pick]:
             source=item.source,
             date=item.published.strftime("%m/%d %H:%M") if item.published else "",
         )
-        for item in items
-        if item.category == FALLBACK_PICK_CATEGORY and item.link
+        for item in candidates
     ][:FALLBACK_PICK_COUNT]
     print(f"[INFO] 編集部ピックアップ: featured.json が空のため自動で {len(auto)} 件")
     return auto
@@ -460,6 +461,7 @@ header p { margin: 6px 0 0; color: var(--muted); }
   padding: 6px 14px; border-radius: 999px; font: inherit; font-size: .9rem; cursor: pointer;
 }
 .filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.filters .count { font-size: .75em; opacity: .75; margin-left: 2px; }
 .grid {
   display: grid; gap: 18px; margin: 16px 0 40px;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
@@ -648,6 +650,15 @@ document.querySelectorAll('.filters button').forEach(function (btn) {
 """
 
 
+SALE_LABEL = "セール"
+FILTER_ORDER = [SALE_LABEL, "ガジェット", "テック"]
+
+
+def display_category(item: Item) -> str:
+    """タイトルにセール・値下げ関連の語があれば「セール」、なければ情報元のカテゴリ。"""
+    return SALE_LABEL if is_sale_title(item.title) else item.category
+
+
 def render_card(item: Item) -> str:
     e = html.escape
     date_html = ""
@@ -656,11 +667,12 @@ def render_card(item: Item) -> str:
             f'<time datetime="{item.published.isoformat()}">'
             f'{item.published.strftime("%Y/%m/%d %H:%M")}</time>'
         )
-    tag_class = "tag deal" if "セール" in item.category else "tag"
+    label = display_category(item)
+    tag_class = "tag deal" if label == SALE_LABEL else "tag"
     return f"""
-      <article class="card" data-category="{e(item.category)}">
+      <article class="card" data-category="{e(label)}">
         <div class="card-head">
-          <span class="{tag_class}">{e(item.category)}</span>
+          <span class="{tag_class}">{e(label)}</span>
           <span>{e(item.source)}</span>
           {date_html}
         </div>
@@ -890,9 +902,17 @@ def render_page(
 ) -> str:
     e = html.escape
     now = datetime.now(JST).strftime("%Y年%m月%d日 %H:%M")
-    categories = sorted({i.category for i in items})
-    filter_buttons = '<button type="button" data-filter="all" aria-pressed="true">すべて</button>' + "".join(
-        f'<button type="button" data-filter="{e(c)}" aria-pressed="false">{e(c)}</button>' for c in categories
+    counts: dict[str, int] = {}
+    for i in items:
+        label = display_category(i)
+        counts[label] = counts.get(label, 0) + 1
+    categories = [c for c in FILTER_ORDER if c in counts] + sorted(c for c in counts if c not in FILTER_ORDER)
+    filter_buttons = (
+        f'<button type="button" data-filter="all" aria-pressed="true">すべて <span class="count">{len(items)}</span></button>'
+        + "".join(
+            f'<button type="button" data-filter="{e(c)}" aria-pressed="false">{e(c)} <span class="count">{counts[c]}</span></button>'
+            for c in categories
+        )
     )
     cards = "".join(render_card(i) for i in items) or '<p class="empty">現在表示できる記事がありません。</p>'
     articles = articles or []

@@ -63,6 +63,7 @@ header p { margin: 6px 0 0; color: var(--muted); }
   padding: 6px 14px; border-radius: 999px; font: inherit; font-size: .9rem; cursor: pointer;
 }
 .filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.filters .count { font-size: .75em; opacity: .75; margin-left: 2px; }
 .grid {
   display: grid; gap: 18px; margin: 16px 0 40px;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
@@ -261,12 +262,13 @@ footer a { color: var(--accent); }
 <h2>ページの見方</h2>
 <p>トップページは、上から次の順に並んでいます。</p>
 <ol>
-<li><strong>今週の注目・編集部ピックアップ</strong>：編集部が注目している商品やセール。登録がない週は、ガジェット・セール関連の最新記事から自動で 3 件を表示します。</li>
+<li><strong>今週の注目・編集部ピックアップ</strong>：編集部が注目している商品やセール。登録がない週は、セール関連の最新ニュースから自動で 3 件を表示します。</li>
 <li><strong>編集部の記事</strong>：この記事のように、編集部が自分で書いた記事です。</li>
 <li><strong>最新ニュース・セール速報</strong>：各メディアの新着記事の一覧です。</li>
 </ol>
-<p>ニュース一覧の上にあるボタンで「テック」「ガジェット/セール」に絞り込めます。
-セール情報だけを見たいときは「ガジェット/セール」を選んでください。</p>
+<p>ニュース一覧の上にあるボタンで「セール」「ガジェット」「テック」に絞り込めます。
+タイトルにセール・値下げ・割引などの言葉を含むニュースには、自動で「セール」のタグが付きます。
+セール情報だけを見たいときは「セール」を選んでください。</p>
 <h2>広告（PR）について</h2>
 <p>当サイトは、アフィリエイトプログラム（もしもアフィリエイト経由の楽天市場など）に参加しています。
 楽天市場へのリンクから商品が購入されると、当サイトに紹介料が支払われることがあります。</p>
