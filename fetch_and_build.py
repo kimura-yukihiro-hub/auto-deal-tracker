@@ -57,6 +57,8 @@ if not SITE_URL.endswith("/"):
     SITE_URL += "/"
 # Google Search Console の所有権確認用（公開して問題ない値）。削除すると確認が外れるので残しておく
 GOOGLE_SITE_VERIFICATION = "PEJzJAjl6FvLmRWf8WOBif-XcYhrC2KI0lsWLUL-MCM"
+# IndexNow（Bing 等へ更新を通知）の所有確認キー。dist/{キー}.txt として公開する（公開して問題ない値）
+INDEXNOW_KEY = "c4cf435d8df235b2e9df3d60fb44feb3"
 OGP_IMAGE = "ogp.png"  # dist/ogp.png（assets/ogp-template.html から作成した静的画像）
 SITE_DESCRIPTION = "テックニュースとセール速報を毎朝7時に自動でまとめてお届け"
 SITE_ABOUT = (
@@ -806,8 +808,9 @@ def render_page(
 
 
 def write_seo_files() -> None:
-    """検索エンジン向けの robots.txt と sitemap.xml を dist/ に出力する。"""
+    """検索エンジン向けの robots.txt・sitemap.xml・IndexNow キーファイルを dist/ に出力する。"""
     out = OUTPUT_PATH.parent
+    (out / f"{INDEXNOW_KEY}.txt").write_text(INDEXNOW_KEY, encoding="utf-8")
     (out / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8"
     )
