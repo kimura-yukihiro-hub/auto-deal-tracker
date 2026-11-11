@@ -2,8 +2,9 @@ name: Update site
 
 on:
   schedule:
-    # 毎日 日本時間 7:00 (UTC 22:00)
-    - cron: "0 22 * * *"
+    # GitHub の定期実行は毎時0分付近が混雑し、遅延・破棄されやすいため分をずらす
+    - cron: "43 21 * * *" # 毎日 日本時間 6:43（本番）
+    - cron: "13 23 * * *" # 毎日 日本時間 8:13（本番が破棄された場合の予備）
   workflow_dispatch: # 手動実行も可能にする
   push:
     branches: [main]
@@ -11,6 +12,7 @@ on:
       - "data/featured.json" # ピックアップを編集したらすぐ再生成する
       - "fetch_and_build.py" # 生成処理を変更したらすぐ反映する
       - "requirements.txt"
+      - ".github/workflows/update.yml"
 
 permissions:
   contents: write
@@ -24,10 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
@@ -53,4 +55,6 @@ jobs:
             exit 0
           fi
           git commit -m "chore: update dist/index.html ($(TZ=Asia/Tokyo date '+%Y-%m-%d %H:%M JST'))"
+          # 実行中に別のコミット（featured.json の編集など）が入っても push できるよう取り込む
+          git pull --rebase origin main
           git push
