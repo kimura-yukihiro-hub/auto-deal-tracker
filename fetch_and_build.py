@@ -501,8 +501,8 @@ header p { margin: 6px 0 0; color: var(--muted); }
   font-size: .82rem; font-weight: 700; text-decoration: none; color: #fff !important;
 }
 .share-x { background: #111; }
-.share-line { background: #06c755; }
-.share-hatena { background: #00a4de; }
+.share-line { background: #037f37; } /* 白文字とのコントラスト比 4.5 以上（LINE の緑を濃くしたもの） */
+.share-hatena { background: #00739c; }
 .share-btn:hover { opacity: .85; }
 .post-share { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
 .post-share p { margin: 0 0 10px; font-size: .85rem; color: var(--muted); }
@@ -522,7 +522,7 @@ header p { margin: 6px 0 0; color: var(--muted); }
   padding: 6px 14px; border-radius: 999px; font: inherit; font-size: .9rem; cursor: pointer;
 }
 .filters button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
-.filters .count { font-size: .75em; opacity: .75; margin-left: 2px; }
+.filters .count { font-size: .75em; margin-left: 2px; }
 .grid {
   display: grid; gap: 18px; margin: 16px 0 40px;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
@@ -898,11 +898,23 @@ def render_product(p: Product) -> str:
           </article>"""
 
 
+def rakuten_thumbnail(url: str, size: int = 192) -> str:
+    """楽天の商品画像（原寸は 800px 前後）を、表示サイズに合わせた縮小版の URL に変える。
+
+    楽天の画像サーバーは thumbnail.image.rakuten.co.jp/@0_mall/... に ?_ex=幅x高さ を付けると縮小版を返す。
+    表示は 96px なので、高解像度の画面向けに 2 倍の 192px にする。楽天以外の画像はそのまま返す。
+    """
+    m = re.match(r"https://(?:shop\.r10s\.jp|image\.rakuten\.co\.jp)(/[^/?#]+/cabinet/[^?#]+)$", url)
+    if not m:
+        return url
+    return f"https://thumbnail.image.rakuten.co.jp/@0_mall{m.group(1)}?_ex={size}x{size}"
+
+
 def render_pick(p: Pick) -> str:
     e = html.escape
     is_rakuten = is_rakuten_ichiba_url(p.url)
     image = (
-        f'<div class="pick-img"><img src="{e(p.image)}" alt="" loading="lazy" width="96" height="96"></div>'
+        f'<div class="pick-img"><img src="{e(rakuten_thumbnail(p.image))}" alt="" loading="lazy" width="96" height="96"></div>'
         if p.image else ""
     )
     meta = " ・ ".join(x for x in (p.source, p.date) if x)

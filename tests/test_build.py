@@ -178,3 +178,13 @@ def test_ga_tag_on_all_pages(tmp_path, monkeypatch):
         assert "gtag('config', 'G-BVN3D3J8FN');" in head
         assert head.index("gtag/js") < head.index("<title>")
     assert "Google アナリティクス" in pages[0]
+
+
+def test_rakuten_thumbnail():
+    """楽天の商品画像は縮小版の URL に変え、それ以外はそのままにする。"""
+    assert fb.rakuten_thumbnail("https://shop.r10s.jp/anker/cabinet/tmb/a1/a1688_normal.jpg") == (
+        "https://thumbnail.image.rakuten.co.jp/@0_mall/anker/cabinet/tmb/a1/a1688_normal.jpg?_ex=192x192"
+    )
+    assert fb.rakuten_thumbnail("https://image.rakuten.co.jp/elecom/cabinet/a.jpg").startswith("https://thumbnail.image.rakuten.co.jp/@0_mall/elecom/cabinet/a.jpg?_ex=")
+    for url in ("https://example.com/a.jpg", "https://shop.r10s.jp/anker/cabinet/a.jpg?x=1", ""):
+        assert fb.rakuten_thumbnail(url) == url
