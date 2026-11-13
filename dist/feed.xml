@@ -5,8 +5,15 @@
     <link>https://auto-deal-tracker.pages.dev/</link>
     <description>スマホ・パソコン・家電のセールと、買い物に役立つ最新ニュースを毎朝チェック</description>
     <language>ja</language>
-    <lastBuildDate>Wed, 11 Nov 2026 07:00:00 +0900</lastBuildDate>
+    <lastBuildDate>Fri, 13 Nov 2026 07:00:00 +0900</lastBuildDate>
     <atom:link href="https://auto-deal-tracker.pages.dev/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>モバイルバッテリーの選び方 容量の目安と、飛行機・安全面で失敗しないためのチェックポイント</title>
+      <link>https://auto-deal-tracker.pages.dev/articles/mobile-battery-guide/</link>
+      <guid isPermaLink="true">https://auto-deal-tracker.pages.dev/articles/mobile-battery-guide/</guid>
+      <pubDate>Fri, 13 Nov 2026 07:00:00 +0900</pubDate>
+      <description>モバイルバッテリーの選び方を、詳しくない人にもわかるようにまとめました。mAh（容量）の目安、飛行機に持ち込めるかの確かめ方（Wh の計算）、容量の表示があやしい商品の見分け方、PSE マークなど安全面のチェックポイントを解説します。</description>
+    </item>
     <item>
       <title>ワイヤレス充電器の選び方 置くだけ充電で失敗しないためのチェックポイント</title>
       <link>https://auto-deal-tracker.pages.dev/articles/wireless-charger-guide/</link>
