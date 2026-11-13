@@ -2,6 +2,8 @@ name: Update site
 
 on:
   schedule:
+    # 毎朝の本番の起動は Cloudflare Workers（cloudflare/morning-trigger/worker.js、日本時間 6:40）から
+    # workflow_dispatch で行う。下の schedule は Cloudflare 側が止まったときの予備。
     # GitHub の定期実行は毎時0分付近が混雑し、遅延・破棄されやすいため分をずらす
     - cron: "43 21 * * *" # 毎日 日本時間 6:43（本番）
     - cron: "13 23 * * *" # 毎日 日本時間 8:13（本番が破棄された場合の予備）
