@@ -5,8 +5,15 @@
     <link>https://auto-deal-tracker.pages.dev/</link>
     <description>スマホ・パソコン・家電のセールと、買い物に役立つ最新ニュースを毎朝チェック</description>
     <language>ja</language>
-    <lastBuildDate>Fri, 13 Nov 2026 07:00:00 +0900</lastBuildDate>
+    <lastBuildDate>Sun, 15 Nov 2026 07:00:00 +0900</lastBuildDate>
     <atom:link href="https://auto-deal-tracker.pages.dev/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>今週のセール・値下げ情報まとめ（11/12〜11/15）</title>
+      <link>https://auto-deal-tracker.pages.dev/articles/weekly-deals-2026-11-15/</link>
+      <guid isPermaLink="true">https://auto-deal-tracker.pages.dev/articles/weekly-deals-2026-11-15/</guid>
+      <pubDate>Sun, 15 Nov 2026 07:00:00 +0900</pubDate>
+      <description>11/12〜11/15に主要IT・家電メディアで報じられた、スマホ・パソコン・家電のセール・値下げ情報 25 件をまとめました。</description>
+    </item>
     <item>
       <title>モバイルバッテリーの選び方 容量の目安と、飛行機・安全面で失敗しないためのチェックポイント</title>
       <link>https://auto-deal-tracker.pages.dev/articles/mobile-battery-guide/</link>
