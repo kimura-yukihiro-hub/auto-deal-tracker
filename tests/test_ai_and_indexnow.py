@@ -88,3 +88,8 @@ def test_unfinished_markers_are_reported():
     from types import SimpleNamespace as NS
     arts = [NS(title="A", slug="a", body_html="<p>【要確認：数字】</p>"), NS(title="B", slug="b", body_html="<p>ok</p>")]
     assert len(fb.find_unfinished_articles(arts)) == 1
+
+
+def test_sanitize_fixes_fullwidth_link_brackets():
+    cleaned, removed = ai_draft.sanitize_body("［選び方］(/articles/mobile-battery-guide/)の記事", {"/articles/mobile-battery-guide/"})
+    assert cleaned == "[選び方](/articles/mobile-battery-guide/)の記事" and removed == []

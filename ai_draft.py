@@ -63,7 +63,9 @@ SYSTEM_PROMPT = """あなたはセール情報サイト「セールの見張り�
   代わりに、編集者が意見を書き足す場所に「""" + EDITOR_MEMO + """」と書く（記事全体で2〜3か所）。
 - セール情報を紹介するときは、出典メディア名とリンクを付ける。
 - 誇張表現（「絶対」「最強」「必ず得する」など）を使わない。
-- 本文は Markdown。見出しは ## と ### を使い、# は使わない。HTML タグは使わない。"""
+- 本文は Markdown。見出しは ## と ### を使い、# は使わない。HTML タグは使わない。
+- リンクは半角の [文字](URL) で書く（全角の ［］ や （） は使わない）。見出し・表・リストの前後には空行を入れる。
+- 【要確認：…】には、編集者が調べやすいように「何を・どこで確認すればよいか」を具体的に書く。"""
 
 USER_PROMPT_TEMPLATE = """以下は {start} から {end} までに主要IT・家電メディアで報じられた、スマホ・パソコン・家電のセール・値下げ関連ニュースです。
 
@@ -232,6 +234,8 @@ def parse_response(text: str) -> dict:
 def sanitize_body(body: str, allowed_urls: set[str]) -> tuple[str, list[str]]:
     """渡していない URL へのリンクを外し、HTML タグと # 見出しを無害化する。"""
     removed: list[str] = []
+    # 全角の角かっこで書かれたリンク ［文字］(URL) を、Markdown のリンク [文字](URL) に直す
+    body = re.sub(r"［([^］\n]+)］\s*[（(]([^)）\s]+)[)）]", r"[\1](\2)", body)
 
     def fix_link(m: re.Match) -> str:
         label, url = m.group(1), m.group(2).strip()
