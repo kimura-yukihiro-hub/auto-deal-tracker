@@ -5,8 +5,15 @@
     <link>https://auto-deal-tracker.pages.dev/</link>
     <description>スマホ・パソコン・家電のセールと、買い物に役立つ最新ニュースを毎朝チェック</description>
     <language>ja</language>
-    <lastBuildDate>Sun, 15 Nov 2026 07:00:00 +0900</lastBuildDate>
+    <lastBuildDate>Mon, 16 Nov 2026 07:00:00 +0900</lastBuildDate>
     <atom:link href="https://auto-deal-tracker.pages.dev/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>ノートパソコンの選び方 仕事や普段使いで失敗しないためのポイント</title>
+      <link>https://auto-deal-tracker.pages.dev/articles/laptop-guide/</link>
+      <guid isPermaLink="true">https://auto-deal-tracker.pages.dev/articles/laptop-guide/</guid>
+      <pubDate>Mon, 16 Nov 2026 07:00:00 +0900</pubDate>
+      <description>ノートパソコンの選び方を、詳しくない人にもわかるようにまとめました。画面サイズと重さ、CPU・メモリ・保存容量（SSD）の目安、Windows・Mac・Chromebook の違い、充電や端子など買う前のチェックポイントを解説します。</description>
+    </item>
     <item>
       <title>今週のセール・値下げ情報まとめ（11/12〜11/15）</title>
       <link>https://auto-deal-tracker.pages.dev/articles/weekly-deals-2026-11-15/</link>

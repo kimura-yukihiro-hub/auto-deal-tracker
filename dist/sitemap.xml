@@ -7,8 +7,13 @@
   </url>
   <url>
     <loc>https://auto-deal-tracker.pages.dev/articles/</loc>
-    <lastmod>2026-11-15</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://auto-deal-tracker.pages.dev/articles/laptop-guide/</loc>
+    <lastmod>2026-11-16</lastmod>
+    <changefreq>monthly</changefreq>
   </url>
   <url>
     <loc>https://auto-deal-tracker.pages.dev/articles/weekly-deals-2026-11-15/</loc>
