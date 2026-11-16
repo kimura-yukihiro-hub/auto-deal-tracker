@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Gemini API で記事の「下書き」を作り、GitHub Issue で知らせるスクリプト。
+"""Gemini API で「選び方の記事」の下書きを作り、GitHub Issue で知らせるスクリプト。
 
 使い方（GitHub Actions から呼び出す）:
     python ai_draft.py            # 日曜日なら下書きを作成し、作成したパスを GITHUB_OUTPUT に出力
@@ -11,8 +11,10 @@
     FORCE_AI_DRAFT : "1" なら曜日に関係なく作成（動作確認用）
 
 方針:
-- 下書きは draft: true（非公開）で articles/ai-draft-YYYY-MM-DD.md に保存する。人が確認して公開する
-- AI には data/deals_log.json の直近7日分（公開ニュースのタイトル・要約・URL）だけを渡す
+- その週のセールで多かった製品の「選び方」記事を作る（週刊セールまとめと内容がかぶらないように）
+- 下書きは draft: true（非公開）で articles/<AI が付けた英小文字の名前>.md に保存する。人が確認して公開する
+- AI には data/deals_log.json の直近7日分（公開ニュースのタイトル・要約・URL）と、既存記事の一覧を渡す
+- 一般的な知識で書いた部分のうち、数字やルールなど確認が必要なところには【要確認：…】を付けさせる
 - 渡していない URL へのリンクは自動で外す（AI が URL を作り出すのを防ぐ）
 - 失敗してもサイトの更新には影響しない（常に終了コード 0）
 """
@@ -41,20 +43,25 @@ DRAFT_WEEKDAY = 6  # 日曜日
 MAX_INPUT_ITEMS = 25
 TIMEOUT = 120
 
+SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+EDITOR_MEMO = "【編集者メモ：選んだ理由や、自分が重視したいポイントを一言追記】"
+
 SYSTEM_PROMPT = """あなたはセール情報サイト「セールの見張り番」の編集アシスタントです。
-編集者が仕上げるための記事の「下書き」を日本語で作成します。
+編集者が仕上げるための「製品の選び方」記事の下書きを日本語で作成します。
 
 読者: スマホ・パソコン・家電を少しでもお得に買いたい人。機械に詳しくない人や、仕事でパソコンを使う人が中心。
 - 専門用語はなるべく使わず、使う場合は短く言い換えや説明を添える（例: 「PD対応（スマホやノートPCを速く充電できる規格）」）。
 - 「どんな人に向いているか」「何が便利か」を、生活や仕事の場面に結びつけて書く。
 
 厳守するルール:
-- 事実は、与えられたデータ（ニュースのタイトル・要約・URL）に書かれていることだけを使う。
-- データにない価格・割引率・仕様・発売日・セール期間を推測で書かない。数字はデータにあるものだけ。
-- リンクには、与えられたデータの URL だけを使う。URL を作り出したり変えたりしない。
+- 個別の商品の価格・割引率・仕様・セール期間は、与えられたニュースのデータに書かれていることだけを使う。推測で書かない。
+- 選び方の説明には一般的な知識を使ってよい。ただし、具体的な数字の目安・法律や規格のルール・安全に関わる情報など、
+  間違えると読者が困る内容には、その文の直後に「【要確認：何を確認すべきか】」と書き、編集者が確認できるようにする。
+  自信のない内容は書かない。
+- リンクには、与えられたニュースの URL と、既存記事のパス（/articles/〜/）だけを使う。URL を作り出したり変えたりしない。
 - 自分が商品を使ったかのような体験談や感想は書かない。
-  代わりに、編集者が体験や意見を書き足す場所に「【編集者メモ：ここに実際の使用感や選んだ理由を追記】」と書く。
-- 各商品・情報の紹介には、出典メディア名とリンクを付ける。
+  代わりに、編集者が意見を書き足す場所に「""" + EDITOR_MEMO + """」と書く（記事全体で2〜3か所）。
+- セール情報を紹介するときは、出典メディア名とリンクを付ける。
 - 誇張表現（「絶対」「最強」「必ず得する」など）を使わない。
 - 本文は Markdown。見出しは ## と ### を使い、# は使わない。HTML タグは使わない。"""
 
@@ -62,15 +69,24 @@ USER_PROMPT_TEMPLATE = """以下は {start} から {end} までに主要IT・家
 
 {items}
 
-この中から読者の関心が高そうなものを3〜5件選び、「今週の注目セール」という趣旨の記事の下書きを作ってください。
+当サイトにすでにある記事（この製品の選び方はもう書いてあるので、同じテーマは選ばない）:
+{existing}
+
+上のニュースの中で、セールの対象として多く出てきた製品の種類（例: ロボット掃除機、ノートパソコン、ワイヤレスイヤホン）を1つ選び、
+その製品の「選び方」を、詳しくない人にもわかるように説明する記事の下書きを作ってください。
+セール情報の一覧（週刊まとめ）は別の記事で公開しているので、セールの紹介が中心の記事にはしないでください。
 
 構成:
-1. 導入（2〜3文）
-2. 選んだ各ニュースについて ### 見出し + 紹介文（データに基づく事実のみ）+ 「【編集者メモ：…】」の空欄 + 出典リンク
-3. 購入前に価格・在庫・セール期間をリンク先で確認するよう促す締めの段落
+1. 導入（2〜3文）+ 「""" + EDITOR_MEMO + """」
+2. 「選び方1：〜」のような ## 見出しで、選ぶときのポイントを3〜5個（向いている人や使う場面に結びつける。表を1つ使うとよい）
+3. 「買う前のチェックポイント」（番号付きリスト）
+4. 「今週のセールで見つけた〇〇」: 上のニュースのうち、選んだ製品のセール情報を1〜3件、出典リンク付きで紹介し、
+   その後に「""" + EDITOR_MEMO + """」
+5. 「まとめ」（箇条書き）と、購入前に価格・在庫・セール期間をリンク先で確認するよう促す一文
+関係のある既存記事があれば、本文中でそのパスにリンクしてよい。
 
 次の JSON 形式だけを出力してください（前後に説明文を付けない）:
-{{"title": "記事タイトル（40字以内）", "description": "記事の紹介文（80〜120字）", "tags": ["タグ1", "タグ2"], "body": "本文（Markdown）"}}"""
+{{"title": "記事タイトル（〇〇の選び方 で始まり、40字以内）", "slug": "URL 用の英小文字とハイフンの名前（例: robot-vacuum-guide）", "description": "記事の紹介文（80〜120字）", "tags": ["タグ1", "タグ2"], "body": "本文（Markdown）"}}"""
 
 
 # ---------------------------------------------------------------------------
@@ -97,6 +113,43 @@ def format_items(entries: list[dict]) -> str:
             f"    URL: {e.get('link', '')}"
         )
     return "\n".join(lines)
+
+
+def load_existing_articles() -> list[dict]:
+    """既存の記事（下書きも含む）の名前・タイトル・タグ。同じテーマの下書きを作らないために AI に渡す。"""
+    articles = []
+    for path in sorted(ARTICLES_DIR.glob("*.md")):
+        if path.name.startswith("_"):
+            continue
+        text = path.read_text(encoding="utf-8")
+        title = re.search(r"(?m)^title:\s*(.+)$", text)
+        tags = re.search(r"(?m)^tags:\s*(.+)$", text)
+        articles.append({
+            "slug": path.stem,
+            "title": title.group(1).strip() if title else path.stem,
+            "tags": tags.group(1).strip() if tags else "",
+        })
+    return articles
+
+
+def format_existing(articles: list[dict]) -> str:
+    return "\n".join(f"- {a['title']}（パス: /articles/{a['slug']}/、タグ: {a['tags']}）" for a in articles) or "（なし）"
+
+
+def choose_slug(raw, today) -> str:
+    """AI が付けた名前を検証し、使えなければ日付入りの名前にする。既存のファイルとは重ならないようにする。"""
+    slug = str(raw or "").strip().lower()
+    if not SLUG_RE.match(slug) or len(slug) > 50:
+        slug = f"guide-draft-{today.isoformat()}"
+    if (ARTICLES_DIR / f"{slug}.md").exists():
+        slug = f"{slug}-{today.isoformat()}"
+    return slug
+
+
+def already_drafted(today) -> bool:
+    """今日の下書きを作成済みか（下書きの公開前メモに入れた目印で判断する）。"""
+    marker = f"ai-draft: {today.isoformat()}"
+    return any(marker in p.read_text(encoding="utf-8") for p in ARTICLES_DIR.glob("*.md"))
 
 
 # ---------------------------------------------------------------------------
@@ -213,13 +266,13 @@ def build_draft_file(data: dict, today, removed: list[str]) -> str:
     tags = [_yaml_value(t) for t in tags if str(t).strip()][:5] or ["セール"]
     note = (
         "<!--\n"
-        "この下書きは AI（Gemini）が自動で作成しました。公開前に必ず確認してください:\n"
-        "  1. 内容が元記事と合っているか（各リンク先で確認）\n"
-        "  2. 【編集者メモ：…】の部分に、自分の言葉で感想や選んだ理由を書く（不要なら削除）\n"
-        "  3. 公開するときは上の draft: true の行を削除する（date も公開日に合わせる）\n"
-        "  4. ファイル名がそのまま URL になるので、内容に合った英小文字の名前に変えるとわかりやすい\n"
-        "     （例: articles/charger-sale-picks.md）\n"
-        "  5. このコメント全体も削除してかまいません\n"
+        f"ai-draft: {today.isoformat()}\n"
+        "この下書きは AI（Gemini）が自動で作成しました。公開前にやること（終わったらこのメモごと削除してください）:\n"
+        "  1. 【要確認：…】の部分を調べて、正しければ【要確認：…】だけを消す（間違いや自信のない文は直すか削除）\n"
+        "  2. セール情報の部分が元記事と合っているか、各リンク先で確認する\n"
+        "  3. 【編集者メモ：…】の部分を、自分の言葉で書き換える（使ったことのない商品の感想は書かない）\n"
+        "  4. 上の「draft: true」の行を削除する ← これを消さないと公開されません\n"
+        "  5. date を公開する日に変える\n"
         + (f"  ※ データにない URL へのリンクを {len(removed)} 件、自動で外しました\n" if removed else "")
         + "-->\n\n"
     )
@@ -268,10 +321,10 @@ def notify(draft_path: str) -> None:
         f"- ファイル: [{rel}]({server}/{repo}/blob/main/{rel})\n"
         f"- 編集する: [GitHub で編集]({server}/{repo}/edit/main/{rel})\n\n"
         "### 公開までのチェックリスト\n"
-        "- [ ] 内容が元記事と合っているか、各リンク先で確認した\n"
-        "- [ ] 【編集者メモ：…】に自分の感想・選んだ理由を書いた（または削除した）\n"
-        "- [ ] `draft: true` の行を削除し、`date` を公開日にした\n"
-        "- [ ] （任意）ファイル名を内容に合った英小文字の名前に変えた（URL になります）\n\n"
+        "- [ ] 【要確認：…】の部分を調べて、正しいことを確かめた（間違いは直した）\n"
+        "- [ ] セール情報の部分が元記事と合っているか、各リンク先で確認した\n"
+        "- [ ] 【編集者メモ：…】を自分の言葉で書き換えた（または削除した）\n"
+        "- [ ] `draft: true` の行と、一番上の公開前メモ（`<!-- … -->`）を削除し、`date` を公開日にした\n\n"
         "公開しない場合は、このファイルを削除してください。確認が終わったらこの Issue を閉じてください。"
     )
     resp = requests.post(
@@ -297,20 +350,25 @@ def create_draft() -> None:
     if not GEMINI_API_KEY:
         annotate("notice", "GEMINI_API_KEY が未設定のため下書きを作成しません")
         return
-    path = ARTICLES_DIR / f"ai-draft-{today.isoformat()}.md"
-    if path.exists():
-        print(f"[INFO] {path.name} は作成済みのためスキップ")
+    if already_drafted(today):
+        print("[INFO] 今日の下書きは作成済みのためスキップ")
         return
     entries = load_week_entries(today)
     if len(entries) < 3:
         annotate("notice", f"今週のセール記事が {len(entries)} 件と少ないため下書きを作成しません")
         return
 
+    existing = load_existing_articles()
     prompt = USER_PROMPT_TEMPLATE.format(
-        start=(today - timedelta(days=6)).isoformat(), end=today.isoformat(), items=format_items(entries)
+        start=(today - timedelta(days=6)).isoformat(),
+        end=today.isoformat(),
+        items=format_items(entries),
+        existing=format_existing(existing),
     )
     data = parse_response(call_gemini(SYSTEM_PROMPT, prompt))
     allowed = {e.get("link", "") for e in entries if e.get("link")}
+    allowed |= {f"/articles/{a['slug']}/" for a in existing}
+    path = ARTICLES_DIR / f"{choose_slug(data.get('slug'), today)}.md"
     body, removed = sanitize_body(str(data["body"]), allowed)
     data["body"] = body
     ARTICLES_DIR.mkdir(parents=True, exist_ok=True)

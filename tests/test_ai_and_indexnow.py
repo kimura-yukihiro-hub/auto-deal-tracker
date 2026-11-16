@@ -54,3 +54,37 @@ def test_indexnow_targets_today_lastmod(tmp_path, monkeypatch):
     )
     monkeypatch.setattr(notify_indexnow, "OUTPUT_PATH", tmp_path / "index.html")
     assert notify_indexnow.changed_urls() == [SITE_URL, f"{SITE_URL}articles/new/"]
+
+
+def test_guide_draft_slug_marker_and_prompt(tmp_path, monkeypatch):
+    """選び方の下書き: 名前の検証、同じ日の二重作成防止、既存記事の一覧をプロンプトに入れる。"""
+    monkeypatch.setattr(ai_draft, "ARTICLES_DIR", tmp_path)
+    today = date(2026, 11, 22)
+    (tmp_path / "mobile-battery-guide.md").write_text(
+        "---\ntitle: モバイルバッテリーの選び方\ntags: a, b\n---\n", encoding="utf-8"
+    )
+    assert ai_draft.choose_slug("robot-vacuum-guide", today) == "robot-vacuum-guide"
+    assert ai_draft.choose_slug("Robot Vacuum!", today) == "guide-draft-2026-11-22"
+    assert ai_draft.choose_slug("mobile-battery-guide", today) == "mobile-battery-guide-2026-11-22"
+    existing = ai_draft.load_existing_articles()
+    assert "/articles/mobile-battery-guide/" in ai_draft.format_existing(existing)
+
+    assert not ai_draft.already_drafted(today)
+    text = ai_draft.build_draft_file({"title": "ロボット掃除機の選び方", "body": "本文"}, today, [])
+    assert "ai-draft: 2026-11-22" in text and "【要確認" in text
+    (tmp_path / "robot-vacuum-guide.md").write_text(text, encoding="utf-8")
+    assert ai_draft.already_drafted(today)
+
+
+def test_sanitize_keeps_links_to_existing_articles():
+    body = "[選び方](/articles/mobile-battery-guide/) と [架空](/articles/nothing/)"
+    cleaned, removed = ai_draft.sanitize_body(body, ALLOWED | {"/articles/mobile-battery-guide/"})
+    assert "(/articles/mobile-battery-guide/)" in cleaned
+    assert "/articles/nothing/" not in cleaned and removed == ["/articles/nothing/"]
+
+
+def test_unfinished_markers_are_reported():
+    import fetch_and_build as fb
+    from types import SimpleNamespace as NS
+    arts = [NS(title="A", slug="a", body_html="<p>【要確認：数字】</p>"), NS(title="B", slug="b", body_html="<p>ok</p>")]
+    assert len(fb.find_unfinished_articles(arts)) == 1

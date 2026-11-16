@@ -328,6 +328,19 @@ class Product:
     review_count: int
 
 
+UNFINISHED_MARKERS = ("【編集者メモ", "【要確認")
+
+
+def find_unfinished_articles(articles) -> list[str]:
+    """公開中の記事に、書き換え忘れの【編集者メモ】【要確認】が残っていないか調べる。"""
+    return [
+        f"公開中の記事「{a.title}」に {m}…】 が残っています（articles/{a.slug}.md）"
+        for a in articles
+        for m in UNFINISHED_MARKERS
+        if m in a.body_html
+    ]
+
+
 def gh_annotate(level: str, title: str, message: str) -> None:
     """GitHub Actions 上なら、実行画面に注釈（notice / warning）として表示する。"""
     if os.environ.get("GITHUB_ACTIONS") != "true":
@@ -1394,6 +1407,9 @@ def main() -> int:
         deals_log, picks, ARTICLES_DIR, today, force=os.environ.get("FORCE_WEEKLY_DIGEST") == "1"
     )
     articles = load_articles(ARTICLES_DIR, urlparse(SITE_URL).hostname or "")
+    for unfinished in find_unfinished_articles(articles):
+        gh_annotate("warning", "記事の書き残し", unfinished)
+        print(f"[WARN] {unfinished}", file=sys.stderr)
     print(f"[INFO] 独自記事: {len(articles)} 件")
     OUTPUT_PATH.write_text(render_page(items, rankings, picks, articles), encoding="utf-8")
     write_article_pages(articles)
