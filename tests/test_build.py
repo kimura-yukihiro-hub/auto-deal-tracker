@@ -197,3 +197,10 @@ def test_top_page_has_no_feed_summaries_and_articles_come_first(make_item):
     html = fb.render_page(items, [], [], articles)
     assert "他メディアの要約文" not in html
     assert html.index('id="articles-title"') < html.index('id="sale-title"') < html.index('id="news"')
+
+
+def test_no_amazon_associate_claim_while_not_approved():
+    """Amazon アソシエイトに参加していない間は、参加しているように読める表示を出さない。"""
+    html = fb.render_page([], [], [], [])
+    assert "Amazonアソシエイト" not in html and "Amazonのアソシエイトとして" not in html
+    assert "もしもアフィリエイト経由の楽天市場など" in html
