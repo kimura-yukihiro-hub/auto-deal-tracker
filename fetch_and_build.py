@@ -303,7 +303,7 @@ def select_picks(items: list[Item]) -> list[Pick]:
     auto = [
         Pick(
             title=item.title,
-            comment=item.summary,
+            comment="",
             url=item.link,
             manual=False,
             label="自動ピックアップ",
@@ -549,7 +549,7 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); }
 .tag { padding: 2px 8px; border-radius: 6px; font-weight: 600; background: var(--tag-tech); color: var(--tag-tech-text); }
 .tag.deal { background: var(--tag-deal); color: var(--tag-deal-text); }
-.card h3 { font-size: 1.05rem; line-height: 1.45; margin: 10px 0 8px; overflow-wrap: anywhere; }
+.card h3 { font-size: 1.05rem; line-height: 1.45; margin: 10px 0 14px; overflow-wrap: anywhere; flex: 1; }
 .card p { margin: 0 0 16px; color: var(--muted); font-size: .9rem; flex: 1; overflow-wrap: anywhere; }
 .card time { margin-left: auto; }
 .btn {
@@ -785,8 +785,7 @@ def render_card(item: Item) -> str:
           {date_html}
         </div>
         <h3>{render_title_link(item.title, item.link)}</h3>
-        <p>{e(item.summary)}</p>
-        {render_link(item.link, "続きを読む →")}
+        {render_link(item.link, "元記事を読む →")}
       </article>"""
 
 
@@ -873,12 +872,10 @@ def render_sale_section(items: list[Item], exclude_links: set[str]) -> str:
         when = ""
         if i.published:
             when = ("今日 " if i.published.date() == today else i.published.strftime("%m/%d ")) + i.published.strftime("%H:%M")
-        summary = i.summary if len(i.summary) <= 70 else i.summary[:70].rstrip() + "…"
         rows.append(f"""
         <article class="sale-item">
           <div class="sale-meta"><span class="tag deal">{SALE_LABEL}</span><span>{e(i.source)}</span><time>{e(when)}</time></div>
           <h3>{render_title_link(i.title, i.link)}</h3>
-          <p>{e(summary)}</p>
         </article>""")
     return f"""
     <section class="sales" id="sale" aria-labelledby="sale-title">
@@ -1189,7 +1186,7 @@ def render_page(
       <div class="meta">最終更新: {now} (JST) ・ {len(items)} 件</div>
     </div>
   </header>"""
-    main_html = f"""{render_picks(picks or [])}{sale_section}{render_article_section(articles)}{render_rankings(rankings or [])}{news_heading}
+    main_html = f"""{render_picks(picks or [])}{render_article_section(articles)}{sale_section}{render_rankings(rankings or [])}{news_heading}
     <nav class="filters" aria-label="カテゴリ絞り込み">{filter_buttons}</nav>
     <section class="grid" aria-labelledby="news">{cards}
     </section>

@@ -188,3 +188,12 @@ def test_rakuten_thumbnail():
     assert fb.rakuten_thumbnail("https://image.rakuten.co.jp/elecom/cabinet/a.jpg").startswith("https://thumbnail.image.rakuten.co.jp/@0_mall/elecom/cabinet/a.jpg?_ex=")
     for url in ("https://example.com/a.jpg", "https://shop.r10s.jp/anker/cabinet/a.jpg?x=1", ""):
         assert fb.rakuten_thumbnail(url) == url
+
+
+def test_top_page_has_no_feed_summaries_and_articles_come_first(make_item):
+    """他メディアの要約文はトップに載せず、編集部の記事をセール速報より上に置く。"""
+    items = [make_item(f"ノートPCがセールで20%オフ{i}", f"https://ex.com/s{i}", summary="他メディアの要約文") for i in range(3)]
+    articles = [Article(slug="guide", title="選び方", date=date(2026, 11, 16), description="d", body_html="<p>x</p>")]
+    html = fb.render_page(items, [], [], articles)
+    assert "他メディアの要約文" not in html
+    assert html.index('id="articles-title"') < html.index('id="sale-title"') < html.index('id="news"')
