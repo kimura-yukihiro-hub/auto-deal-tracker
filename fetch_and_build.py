@@ -42,6 +42,7 @@ import feedparser
 import requests
 
 from affiliate import build_moshimo_rakuten_link, is_rakuten_ichiba_url, moshimo_rakuten_impression_url
+from rakuten_links import expand_for_affiliate
 from articles import Article, load_articles
 from digest import is_sale_title, maybe_write_weekly_digest, update_log
 
@@ -162,6 +163,7 @@ def render_link(url: str, label: str) -> str:
     e = html.escape
     if not url:
         return ""
+    url = expand_for_affiliate(url)  # 楽天アプリの短いリンクは元の URL に戻す
     if is_rakuten_ichiba_url(url):
         return (
             f'<a class="btn" href="{e(build_moshimo_rakuten_link(url))}" target="_blank" '
@@ -794,6 +796,7 @@ def render_title_link(title: str, url: str) -> str:
     e = html.escape
     if not url:
         return e(title)
+    url = expand_for_affiliate(url)  # 楽天アプリの短いリンクは元の URL に戻す
     if is_rakuten_ichiba_url(url):
         return (
             f'<a href="{e(build_moshimo_rakuten_link(url))}" target="_blank" rel="nofollow sponsored noopener" '

@@ -563,6 +563,18 @@ def notify(draft_path: str) -> None:
         "- [ ] `draft: true` の行と、一番上の公開前メモ（`<!-- … -->`）を削除し、`date` を公開日にした\n\n"
         "公開しない場合は、このファイルを削除してください。確認が終わったらこの Issue を閉じてください。"
     )
+    try:  # スマホから仕上げるときの書き方と、今の欄の一覧
+        import draft_editor
+
+        body += (
+            "\n\n### 📱 スマホで仕上げるとき\n"
+            "この Issue にコメントで指示を書くと、自動で下書きに反映します（返信で結果を知らせます）。"
+            "商品は欄の番号と楽天のリンクを 1 行ずつ書きます。楽天市場アプリの「共有」のリンクも使えます。\n\n"
+            + draft_editor.status_text(Path(draft_path).read_text(encoding="utf-8"))
+            + "\n\n" + draft_editor.HELP
+        )
+    except Exception as e:  # 一覧が作れなくても Issue は作る
+        print(f"[INFO] スマホ向けの案内を作れませんでした: {e}")
     resp = requests.post(
         f"https://api.github.com/repos/{repo}/issues",
         headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"},

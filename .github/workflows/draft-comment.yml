@@ -1,0 +1,75 @@
+name: AI 下書きをコメントで仕上げる
+
+# 「📝 AI下書きの確認」の Issue に、リポジトリの持ち主がコメントしたときだけ動く（draft_editor.py 参照）。
+# このリポジトリは公開なので、ほかの人のコメントには反応しない。
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write  # 下書きの変更を保存する
+  issues: write    # 返信・Issue を閉じる
+  actions: write   # 公開したらサイト更新のワークフローを動かす
+
+concurrency:
+  group: draft-comment-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  edit:
+    if: >-
+      github.event.issue.pull_request == null &&
+      github.event.comment.author_association == 'OWNER' &&
+      contains(github.event.issue.title, 'AI下書き')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: コメントの指示を下書きに反映する
+        id: edit
+        env:
+          # コメントや Issue の本文はシェルに直接埋め込まず、環境変数で渡す（コマンドとして実行されないように）
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          REPLY_FILE: ${{ runner.temp }}/reply.md
+        run: python draft_editor.py
+
+      - name: 保存する
+        if: steps.edit.outputs.changed == 'true'
+        env:
+          FILE: ${{ steps.edit.outputs.file }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- "$FILE"
+          [ -f data/short_links.json ] && git add data/short_links.json
+          msg="docs: Issue のコメントで下書きを更新（$FILE）"
+          [ "${{ steps.edit.outputs.published }}" = "true" ] && msg="docs: 記事を公開（$FILE）"
+          git commit -m "$msg"
+          git pull --rebase origin main
+          git push
+
+      - name: 返信する
+        if: steps.edit.outputs.has_reply == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: gh issue comment "$NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/reply.md"
+
+      - name: 公開したらサイトを更新して Issue を閉じる
+        if: steps.edit.outputs.published == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          # GITHUB_TOKEN での push では他のワークフローが動かないので、サイト更新を手動実行の形で呼ぶ
+          gh workflow run update.yml --repo "$GITHUB_REPOSITORY" --ref main
+          gh issue close "$NUMBER" --repo "$GITHUB_REPOSITORY" --reason completed

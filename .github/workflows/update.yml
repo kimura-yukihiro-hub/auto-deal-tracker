@@ -84,6 +84,8 @@ jobs:
           # data/ai_draft_history.json: AI 下書きの型の履歴（同じ型が続かないように）
           git add dist/ articles/ data/deals_log.json
           [ -f data/ai_draft_history.json ] && git add data/ai_draft_history.json
+          # data/short_links.json: 楽天アプリの短いリンクを元の URL に戻した結果（毎回問い合わせないため）
+          [ -f data/short_links.json ] && git add data/short_links.json
           if git diff --cached --quiet; then
             echo "変更なし。コミットをスキップします。"
             echo "changed=false" >> "$GITHUB_OUTPUT"

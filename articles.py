@@ -19,6 +19,8 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 import markdown
+
+from rakuten_links import expand_for_affiliate
 from markdown.extensions import Extension
 from markdown.treeprocessors import Treeprocessor
 
@@ -76,7 +78,7 @@ class _LinkProcessor(Treeprocessor):
                 child.set("loading", "lazy")
             if child.tag != "a":
                 continue
-            href = child.get("href", "")
+            href = expand_for_affiliate(child.get("href", ""))  # 楽天アプリの短いリンクは元の URL に戻す
             if is_rakuten_ichiba_url(href):
                 child.set("href", build_moshimo_rakuten_link(href))
                 for key, value in AFFILIATE_LINK_ATTRS.items():
