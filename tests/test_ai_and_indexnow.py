@@ -93,3 +93,66 @@ def test_unfinished_markers_are_reported():
 def test_sanitize_fixes_fullwidth_link_brackets():
     cleaned, removed = ai_draft.sanitize_body("［選び方］(/articles/mobile-battery-guide/)の記事", {"/articles/mobile-battery-guide/"})
     assert cleaned == "[選び方](/articles/mobile-battery-guide/)の記事" and removed == []
+
+
+def test_choose_format_rotates_and_avoids_recent():
+    assert ai_draft.choose_format([])["name"] == "選び方"
+    used = [{"format": "選び方"}, {"format": "2製品の比較"}]
+    picked = ai_draft.choose_format(used)["name"]
+    assert picked not in ("選び方", "2製品の比較")
+    # 全部使い終わったら、一番昔に使った型に戻る
+    all_used = [{"format": f["name"]} for f in ai_draft.FORMATS]
+    assert ai_draft.choose_format(all_used)["name"] == ai_draft.FORMATS[0]["name"]
+
+
+def test_prompts_render_for_every_format():
+    for fmt in ai_draft.FORMATS:
+        text = ai_draft.USER_PROMPT_TEMPLATE.format(
+            start="2026-11-16", end="2026-11-22", items="[1] x", existing="（なし）", recent="（なし）",
+            format_name=fmt["name"], format_topic=fmt["topic"], format_structure=fmt["structure"], format_title=fmt["title"])
+        assert "## 結論" in text and ai_draft.PRODUCT_MEMO in text and ai_draft.EXPERIENCE_MEMO in text
+
+
+def _good_body():
+    return (
+        "そのイヤホン、通勤ではうるさすぎるかもしれません。\n" + ai_draft.EXPERIENCE_MEMO + "\n\n"
+        "## 結論：使い方別のおすすめ早見表\n\n| こんな人に | おすすめ | 価格の目安 |\n|---|---|---|\n"
+        f"| 通勤 | {ai_draft.PRODUCT_MEMO} | {ai_draft.PRODUCT_MEMO} |\n\n## まとめ\n\n- a\n\n買う前に、価格を確かめてください。"
+    )
+
+
+def test_mechanical_checks_pass_and_fail():
+    assert ai_draft.mechanical_checks({"title": "イヤホンの選び方｜通勤別のおすすめ", "body": _good_body()}) == []
+    bad = {"title": "あ" * 40, "body": "今回はイヤホンについて解説します。\n## 選び方\n本文\nいかがでしたか？"}
+    problems = " ".join(ai_draft.mechanical_checks(bad))
+    for word in ("タイトル", "結論", "商品", "体験", "最初の1文", "最後の1文"):
+        assert word in problems
+
+
+def test_create_draft_reviews_revises_and_keeps_best(tmp_path, monkeypatch):
+    """1回目は不合格 → 書き直し → 合格した版が下書きになり、型の履歴が残る。"""
+    monkeypatch.setattr(ai_draft, "ARTICLES_DIR", tmp_path / "articles")
+    monkeypatch.setattr(ai_draft, "HISTORY_PATH", tmp_path / "history.json")
+    monkeypatch.setattr(ai_draft, "BASE_DIR", tmp_path)
+    monkeypatch.setattr(ai_draft, "GEMINI_API_KEY", "dummy")
+    monkeypatch.setenv("FORCE_AI_DRAFT", "1")
+    entries = [{"title": f"t{i}", "link": f"https://example.com/{i}", "date": "2026-11-20"} for i in range(3)]
+    monkeypatch.setattr(ai_draft, "load_week_entries", lambda today: entries)
+    calls = []
+
+    def fake_call(system, prompt, temperature=None, retries=3):
+        calls.append(system[:10])
+        if system == ai_draft.REVIEW_SYSTEM:
+            ok = "1 回目" not in prompt
+            return json.dumps({"scores": {"基準": 5 if ok else 2}, "must_fix": [] if ok else ["直す"], "pass": ok})
+        title = "1 回目" if "修正指示" not in prompt else "イヤホンの選び方｜通勤別"
+        return json.dumps({"title": title, "slug": "earphone-test", "description": "d", "tags": ["a"], "body": _good_body()},
+                          ensure_ascii=False)
+
+    monkeypatch.setattr(ai_draft, "call_gemini", fake_call)
+    ai_draft.create_draft()
+    text = (tmp_path / "articles" / "earphone-test.md").read_text(encoding="utf-8")
+    assert "title: イヤホンの選び方｜通勤別" in text and "確認役の判定（型: 選び方）: 合格" in text
+    assert len(calls) == 4  # 執筆・確認・書き直し・確認
+    history = json.loads((tmp_path / "history.json").read_text(encoding="utf-8"))
+    assert history[-1]["format"] == "選び方" and history[-1]["pass"] is True

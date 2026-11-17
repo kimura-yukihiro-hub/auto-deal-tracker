@@ -11,7 +11,10 @@
     FORCE_AI_DRAFT : "1" なら曜日に関係なく作成（動作確認用）
 
 方針:
-- その週のセールで多かった製品の「選び方」記事を作る（週刊セールまとめと内容がかぶらないように）
+- その週のセールで多かった製品について、記事の「型」（選び方・2製品の比較・後悔しないチェック・場面別の組み合わせ・
+  セール前の準備）を順番に変えながら作る（週刊セールまとめと内容がかぶらないように）
+- 執筆役とは別に確認役（Gemini を別の指示で呼ぶ）が採点し、だめなら 1 回だけ書き直させて、良いほうを下書きにする
+- どの型でも「結論の早見表」「楽天の商品欄（編集者が記入）」「体験欄」「短いタイトル」の基準を守る
 - 下書きは draft: true（非公開）で articles/<AI が付けた英小文字の名前>.md に保存する。人が確認して公開する
 - AI には data/deals_log.json の直近7日分（公開ニュースのタイトル・要約・URL）と、既存記事の一覧を渡す
 - 一般的な知識で書いた部分のうち、数字やルールなど確認が必要なところには【要確認：…】を付けさせる
@@ -25,6 +28,7 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -33,6 +37,7 @@ import requests
 BASE_DIR = Path(__file__).resolve().parent
 ARTICLES_DIR = BASE_DIR / "articles"
 DEALS_LOG_PATH = BASE_DIR / "data" / "deals_log.json"
+HISTORY_PATH = BASE_DIR / "data" / "ai_draft_history.json"  # どの型で書いたか（同じ型が続かないように）
 FEATURED_PATH = BASE_DIR / "data" / "featured.json"
 JST = timezone(timedelta(hours=9))
 
@@ -42,6 +47,9 @@ GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta"
 DRAFT_WEEKDAY = 6  # 日曜日
 MAX_INPUT_ITEMS = 25
 TIMEOUT = 120
+MAX_TITLE_LENGTH = 32
+AVOID_RECENT_FORMATS = 2   # 直近この本数で使った型は避ける
+RECENT_FOR_PROMPT = 6      # AI に「構成を変えて」と見せる直近の記事数
 
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 EDITOR_MEMO = "【編集者メモ：選んだ理由や、自分が重視したいポイントを一言追記】"
@@ -73,35 +81,116 @@ SYSTEM_PROMPT = """あなたはセール情報サイト「セールの見張り�
 - リンクは半角の [文字](URL) で書く（全角の ［］ や （） は使わない）。見出し・表・リストの前後には空行を入れる。
 - 【要確認：…】には、編集者が調べやすいように「何を・どこで確認すればよいか」を具体的に書く。"""
 
+# 記事の型。どの型でも「結論の早見表」「楽天の商品欄」「体験欄」を入れる（選び方記事の標準）
+FORMATS = [
+    {
+        "name": "選び方",
+        "topic": "セールの対象として多く出てきた製品の種類（例: ロボット掃除機、ノートパソコン）を1つ選ぶ",
+        "title": "「〇〇の選び方｜△△別のおすすめ」の形（△△は使い方や予算）",
+        "structure": """2. 「## 結論：使い方別のおすすめ早見表」: 「こんな人に | おすすめ | 価格の目安」の3列の表を1つ。行は使い方や予算で3〜4行。
+   「おすすめ」と「価格の目安」の列は、すべて「""" + PRODUCT_MEMO + """」。表の下に「詳しくは後半の『予算別のおすすめ』で紹介しています」と一文。
+3. 「選び方1：〜」のような ## 見出しで、選ぶときのポイントを3〜5個（向いている人や使う場面に結びつける）
+4. 「買う前のチェックポイント」（番号付きリスト）
+5. 「## 予算別のおすすめ〇〇」: 早見表と同じ区分で ### 見出しを作り、それぞれに向いている人と見るポイントを2〜3文と「""" + PRODUCT_MEMO + """」""",
+    },
+    {
+        "name": "2製品の比較",
+        "topic": "ニュースに出てきた製品のうち、よく比べられる2つ（具体的な2製品、または2つのタイプ。例: ノイキャン付きとなし、11インチと13インチ）を選ぶ",
+        "title": "「AとB、どっちを買う？｜〇〇で比べた結論」の形",
+        "structure": """2. 「## 結論：こんな人はA、こんな人はB」: 「こんな人に | 選ぶほう | 価格の目安」の3列の表（3〜4行）。価格の目安の列は「""" + PRODUCT_MEMO + """」。
+3. 「## 違い1：〜」のような見出しで、違いを3〜4個（どんな場面で差が出るかを書く）。比較表を1つ入れる
+4. 「## どっちでもいい人・どっちも合わない人」
+5. 「## おすすめの商品」: A と B それぞれ ### 見出しで、向いている人を2〜3文と「""" + PRODUCT_MEMO + """」""",
+    },
+    {
+        "name": "後悔しないチェック",
+        "topic": "セールで買われやすいが、選び間違えやすい製品の種類を1つ選ぶ",
+        "title": "「〇〇で後悔しないために｜買う前の△つのチェック」の形",
+        "structure": """2. 「## 結論：後悔しない〇〇の早見表」: 「こんな人に | おすすめ | 価格の目安」の3列の表（3〜4行）。「おすすめ」と「価格の目安」は「""" + PRODUCT_MEMO + """」。
+3. 「## よくある後悔1：〜」のような見出しで、買ったあとに多い後悔を4〜5個。それぞれ「なぜ起きるか」「買う前にどこを見れば防げるか」
+4. 「## 買う前のチェックリスト」（番号付きリスト）
+5. 「## 後悔しにくいおすすめ」: 早見表と同じ区分の ### 見出しで、2〜3文と「""" + PRODUCT_MEMO + """」""",
+    },
+    {
+        "name": "場面別の組み合わせ",
+        "topic": "ニュースのセール品が役立つ生活や仕事の場面（例: 在宅ワーク、新生活、出張・旅行）を1つ選び、そろえたい製品を3〜4種類決める",
+        "title": "「〇〇にそろえたい△点｜予算別の組み合わせ」の形",
+        "structure": """2. 「## 結論：予算別の組み合わせ早見表」: 「予算 | そろえるもの | 合計の目安」の3列の表（2〜3行）。「合計の目安」は「""" + PRODUCT_MEMO + """」。
+3. 製品の種類ごとに ## 見出しを作り、それぞれ「なぜこの場面で必要か」「選ぶときのポイント」を書き、最後に「""" + PRODUCT_MEMO + """」
+4. 「## 優先順位：予算が限られるなら」（どれから買うか）""",
+    },
+    {
+        "name": "セール前の準備",
+        "topic": "ニュースに出てきた大きなセール（例: ブラックフライデー、初売り、プライムデー）か、セールで値下がりしやすい製品の種類を選ぶ",
+        "title": "「〇〇セールで狙いたい△△｜損しないための準備」の形",
+        "structure": """2. 「## 結論：狙い目の早見表」: 「狙うもの | こんな人に | 価格の目安」の3列の表（3〜4行）。「価格の目安」は「""" + PRODUCT_MEMO + """」。
+3. 「## セール前にやっておくこと」（番号付きリスト。価格の記録、ポイントの条件の確認など）
+4. 「## 狙い目1：〜」のような見出しで、狙うものを3〜4個。それぞれ見るポイントと「""" + PRODUCT_MEMO + """」
+5. 「## よくある失敗」（安く見えて得していない例など）""",
+    },
+]
+
 USER_PROMPT_TEMPLATE = """以下は {start} から {end} までに主要IT・家電メディアで報じられた、スマホ・パソコン・家電のセール・値下げ関連ニュースです。
 
 {items}
 
-当サイトにすでにある記事（この製品の選び方はもう書いてあるので、同じテーマは選ばない）:
+当サイトにすでにある記事（同じテーマは選ばない）:
 {existing}
 
-上のニュースの中で、セールの対象として多く出てきた製品の種類（例: ロボット掃除機、ノートパソコン、ワイヤレスイヤホン）を1つ選び、
-その製品の「選び方」を、詳しくない人にもわかるように説明する記事の下書きを作ってください。
+最近の AI 下書き（これと見出しの流れ・書き出し・言い回しを変える）:
+{recent}
+
+今回の記事の型: 「{format_name}」
+テーマの選び方: {format_topic}
 セール情報の一覧（週刊まとめ）は別の記事で公開しているので、セールの紹介が中心の記事にはしないでください。
 
 構成（「結局どれを買えばいいの？」に早く答える順番にする）:
-1. 導入（2〜3文）+ 「""" + EXPERIENCE_MEMO + """」
-2. 「## 結論：使い方別のおすすめ早見表」: 「こんな人に | おすすめ | 価格の目安」の3列の表を1つ。
-   行は使い方や予算で3〜4行（例: とにかく安く / 通勤向け / 在宅ワーク向け / 長く使える上位モデル）。
-   「おすすめ」と「価格の目安」の列には、すべて「""" + PRODUCT_MEMO + """」と書く。
-   表の下に「詳しくは後半の『予算別のおすすめ』で紹介しています」と一文。
-3. 「選び方1：〜」のような ## 見出しで、選ぶときのポイントを3〜5個（向いている人や使う場面に結びつける。表を1つ使うとよい）
-4. 「買う前のチェックポイント」（番号付きリスト）
-5. 「## 予算別のおすすめ〇〇」: 早見表と同じ区分で ### 見出しを作り、それぞれに
-   「どんな人に向いているか」「この区分で選ぶときに見るポイント（選び方の内容とつなげる）」を2〜3文と、
-   「""" + PRODUCT_MEMO + """」を書く。いずれか1つの区分の最後に「""" + EXPERIENCE_MEMO + """」。
-6. 「### 最近のセールニュースから」: 上のニュースのうち、選んだ製品のセール情報を1〜3件、出典リンク付きで紹介する
+1. 導入（2〜3文）+ 「""" + EXPERIENCE_MEMO + """」。導入の最初の1文は40字以内で、読者の手が止まる一文（よくある悩みの言い当て、意外な事実など）。
+   「今回は」「この記事では」「〜について解説します」で始めない。
+{format_structure}
+   いずれか1つの区分の最後に「""" + EXPERIENCE_MEMO + """」。
+6. 「### 最近のセールニュースから」: 上のニュースのうち、関係するセール情報を1〜3件、出典リンク付きで紹介する
    （価格はニュース掲載時点で、終わっている可能性があると書く）。該当がなければこの見出しごと省く
-7. 「まとめ」（箇条書き）と、購入前に価格・在庫・セール期間をリンク先で確認するよう促す一文
+7. 「まとめ」（箇条書き）と、購入前に価格・在庫・セール期間をリンク先で確認するよう促す一文。
+   最後の1文は「いかがでしたか」「参考になれば幸いです」のような決まり文句にせず、読者が次にやることが分かる一文にする
 関係のある既存記事があれば、本文中でそのパスにリンクしてよい。
+無駄な文（前置き、同じことの言い換え、見出しの直後の要約）は書かない。
 
 次の JSON 形式だけを出力してください（前後に説明文を付けない）:
-{{"title": "記事タイトル（「〇〇の選び方｜△△別のおすすめ」の形で、30字以内。△△は使い方や予算。例: ロボット掃除機の選び方｜部屋の広さ・予算別のおすすめ）", "slug": "URL 用の英小文字とハイフンの名前（例: robot-vacuum-guide）", "description": "記事の紹介文（80〜120字）", "tags": ["タグ1", "タグ2"], "body": "本文（Markdown）"}}"""
+{{"title": "記事タイトル（{format_title}。""" + str(MAX_TITLE_LENGTH) + """字以内）", "slug": "URL 用の英小文字とハイフンの名前（例: robot-vacuum-guide）", "description": "記事の紹介文（80〜120字）", "tags": ["タグ1", "タグ2"], "body": "本文（Markdown）"}}"""
+
+REVIEW_SYSTEM = """あなたはセール情報サイト「セールの見張り番」の厳しい編集長です。AI が書いた下書きを、自分では書き直さずに採点します。
+次の観点を1〜5点で採点する（甘くつけない）:
+- 基準: 冒頭に「## 結論」の早見表があるか。商品欄が【編集者メモ：楽天市場で商品を選び…】になっていて、AI が商品名・価格を勝手に決めていないか
+- 正確さ: ニュースにない価格・割引率・仕様を書いていないか。数字の目安や安全・規格の話に【要確認：…】が付いているか
+- 読者: 機械に詳しくない人に分かる言葉か。使う場面に結びついているか
+- タイトル: 短く、読者が「自分のことだ」と思えるか
+- 無駄のなさ: 削っても意味が変わらない文がないか（あればそのまま wasteful_sentences に書き出す）
+- 独自性: 最近の下書きと見出しの流れ・言い回しが似ていないか
+出力は指定の JSON だけ。"""
+
+REVIEW_PROMPT = """【最近の AI 下書き】
+{recent}
+
+【今回の下書き（型: {format_name}）】
+タイトル: {title}
+
+{body}
+
+次の JSON だけを出力:
+{{"scores": {{"基準": 1〜5, "正確さ": 1〜5, "読者": 1〜5, "タイトル": 1〜5, "無駄のなさ": 1〜5, "独自性": 1〜5}},
+  "must_fix": ["必ず直す点（どこを・どう直すか）"], "wasteful_sentences": ["削るべき文をそのまま"],
+  "pass": true または false（すべて4以上で must_fix が空なら true）}}"""
+
+REVISION_PROMPT = """{base}
+
+【前回の下書き】
+{previous}
+
+【編集長からの修正指示（必ずすべて反映する）】
+{feedback}
+
+修正指示を反映した完成版を、同じ JSON 形式で出力してください。"""
 
 
 # ---------------------------------------------------------------------------
@@ -151,6 +240,37 @@ def format_existing(articles: list[dict]) -> str:
     return "\n".join(f"- {a['title']}（パス: /articles/{a['slug']}/、タグ: {a['tags']}）" for a in articles) or "（なし）"
 
 
+def load_history() -> list[dict]:
+    try:
+        data = json.loads(HISTORY_PATH.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def save_history(history: list[dict], entry: dict) -> None:
+    HISTORY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    HISTORY_PATH.write_text(json.dumps((history + [entry])[-50:], ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def choose_format(history: list[dict]) -> dict:
+    """直近で使った型を避け、まだ使っていない（または一番昔に使った）型を選ぶ。最初は「選び方」から。"""
+    recent = [h.get("format") for h in history[-AVOID_RECENT_FORMATS:]]
+    last_used = {h.get("format"): i for i, h in enumerate(history)}
+    candidates = [f for f in FORMATS if f["name"] not in recent] or FORMATS
+    return min(candidates, key=lambda f: last_used.get(f["name"], -1))
+
+
+def format_recent(history: list[dict]) -> str:
+    lines = [f"- {h.get('title', '')}（型: {h.get('format', '')}、見出し: {' / '.join(h.get('headings', [])[:8])}）"
+             for h in history[-RECENT_FOR_PROMPT:]]
+    return "\n".join(lines) or "（なし）"
+
+
+def extract_headings(body: str) -> list[str]:
+    return [re.sub(r"^#+\s*", "", l).strip() for l in body.splitlines() if re.match(r"^#{2,3}\s", l)]
+
+
 def choose_slug(raw, today) -> str:
     """AI が付けた名前を検証し、使えなければ日付入りの名前にする。既存のファイルとは重ならないようにする。"""
     slug = str(raw or "").strip().lower()
@@ -194,8 +314,25 @@ def _extract_text(data) -> str:
     return ""
 
 
-def call_gemini(system: str, prompt: str) -> str:
+def call_gemini(system: str, prompt: str, temperature: float | None = None, retries: int = 3) -> str:
+    """429（無料枠の上限）や 503 は少し待って再試行する。それ以外のエラーはそのまま上げる。"""
+    for attempt in range(1, retries + 1):
+        try:
+            return _call_gemini_once(system, prompt, temperature)
+        except RuntimeError as e:
+            if attempt == retries or not re.search(r"HTTP (429|500|503)", str(e)):
+                raise
+            wait = 60 if "HTTP 429" in str(e) else 20
+            print(f"[INFO] Gemini が混雑・上限のため {wait} 秒待って再試行します（{attempt}/{retries}）")
+            time.sleep(wait)
+    raise RuntimeError("到達しない")
+
+
+def _call_gemini_once(system: str, prompt: str, temperature: float | None) -> str:
     headers = {"x-goog-api-key": GEMINI_API_KEY, "Content-Type": "application/json"}
+    gen_config = {"responseMimeType": "application/json", "maxOutputTokens": 8192}
+    if temperature is not None:
+        gen_config["temperature"] = temperature
     # 1) 従来の generateContent
     resp = requests.post(
         f"{GEMINI_BASE}/models/{GEMINI_MODEL}:generateContent",
@@ -203,7 +340,7 @@ def call_gemini(system: str, prompt: str) -> str:
         json={
             "system_instruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": prompt}]}],
-            "generationConfig": {"responseMimeType": "application/json", "maxOutputTokens": 8192},
+            "generationConfig": gen_config,
         },
         timeout=TIMEOUT,
     )
@@ -272,11 +409,75 @@ def sanitize_body(body: str, allowed_urls: set[str]) -> tuple[str, list[str]]:
     return body.strip(), removed
 
 
+def mechanical_checks(data: dict) -> list[str]:
+    """AI に任せず、コードで確実に見られる基準。"""
+    title, body = str(data.get("title", "")), str(data.get("body", ""))
+    problems = []
+    if len(title) > MAX_TITLE_LENGTH:
+        problems.append(f"タイトルが {len(title)} 字と長いので、{MAX_TITLE_LENGTH} 字以内に短くする")
+    if not re.search(r"(?m)^##\s*結論", body):
+        problems.append("導入の直後に「## 結論：〜」の早見表を入れる")
+    if body.count(PRODUCT_MEMO) < 2:
+        problems.append(f"商品を入れる欄は、AI が商品名や価格を決めずに「{PRODUCT_MEMO}」と書く（早見表と後半の両方）")
+    if EXPERIENCE_MEMO not in body:
+        problems.append(f"体験を書く場所に「{EXPERIENCE_MEMO}」を入れる")
+    lines = [l.strip() for l in body.splitlines() if l.strip() and not l.lstrip().startswith(("#", "|", "-", "*", "【"))]
+    if lines:
+        first = re.split(r"(?<=[。！？])", lines[0])[0]
+        if re.match(r"^(今回は|この記事では|本記事では|こんにちは)", first) or len(first) > 45:
+            problems.append(f"導入の最初の1文を、40字以内で読者の手が止まる一文にする（今: 「{first[:40]}」）")
+        if re.search(r"(いかがでしたか|参考になれば幸いです)", lines[-1]):
+            problems.append("最後の1文を決まり文句にしない")
+    return problems
+
+
+def review(data: dict, fmt: dict, history: list[dict]) -> dict:
+    """確認役に採点させ、コードでのチェックと合わせて判定する。確認役が失敗したら「未確認」。"""
+    try:
+        text = call_gemini(REVIEW_SYSTEM, REVIEW_PROMPT.format(
+            recent=format_recent(history), format_name=fmt["name"], title=data.get("title", ""), body=data.get("body", "")),
+            temperature=0.2)
+        result = parse_json_object(text)
+    except Exception as e:
+        print(f"[INFO] 確認役が採点できませんでした: {type(e).__name__}: {str(e)[:150]}")
+        result = {"scores": {}, "must_fix": [], "pass": False, "unreviewed": True}
+    must_fix = mechanical_checks(data) + [str(x) for x in (result.get("must_fix") or [])]
+    wasteful = [w for w in (result.get("wasteful_sentences") or []) if isinstance(w, str) and w.strip()]
+    if wasteful:
+        must_fix.append("次の文は削る: " + " / ".join(f"「{w[:50]}」" for w in wasteful[:6]))
+    result["must_fix"] = must_fix
+    result["pass"] = bool(result.get("pass")) and not must_fix
+    return result
+
+
+def score_of(result: dict) -> tuple:
+    scores = [v for v in (result.get("scores") or {}).values() if isinstance(v, (int, float))]
+    return (bool(result.get("pass")), not result.get("unreviewed"), -len(result.get("must_fix", [])), sum(scores))
+
+
+def parse_json_object(text: str) -> dict:
+    text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text.strip())
+    start, end = text.find("{"), text.rfind("}")
+    if start < 0 or end < 0:
+        raise ValueError("JSON が見つかりません")
+    return json.loads(text[start : end + 1])
+
+
 def _yaml_value(text: str) -> str:
     return re.sub(r"\s*:\s*", "：", re.sub(r"\s+", " ", str(text))).strip()
 
 
-def build_draft_file(data: dict, today, removed: list[str]) -> str:
+def _review_note(result: dict, fmt_name: str) -> str:
+    if result.get("unreviewed"):
+        verdict = "未確認（確認役が採点できませんでした。いつもより丁寧に読んでください）"
+    else:
+        verdict = "合格" if result.get("pass") else "不合格のまま（下の点を直してください）"
+    lines = [f"  確認役の判定（型: {fmt_name}）: {verdict} / 評価: {result.get('scores') or 'なし'}\n"]
+    lines += [f"    - {_yaml_value(x)[:150]}\n" for x in result.get("must_fix", [])[:8]]
+    return "".join(lines)
+
+
+def build_draft_file(data: dict, today, removed: list[str], review_result: dict | None = None, fmt_name: str = "") -> str:
     tags = data.get("tags") or []
     if isinstance(tags, str):
         tags = [t.strip() for t in tags.split(",")]
@@ -293,6 +494,7 @@ def build_draft_file(data: dict, today, removed: list[str]) -> str:
         "  5. 上の「draft: true」の行を削除する ← これを消さないと公開されません\n"
         "  6. date を公開する日に変える\n"
         + (f"  ※ データにない URL へのリンクを {len(removed)} 件、自動で外しました\n" if removed else "")
+        + (_review_note(review_result, fmt_name) if review_result is not None else "")
         + "-->\n\n"
     )
     return (
@@ -379,22 +581,49 @@ def create_draft() -> None:
         return
 
     existing = load_existing_articles()
-    prompt = USER_PROMPT_TEMPLATE.format(
+    history = load_history()
+    fmt = choose_format(history)
+    print(f"[INFO] 今回の型: {fmt['name']}")
+    base_prompt = USER_PROMPT_TEMPLATE.format(
         start=(today - timedelta(days=6)).isoformat(),
         end=today.isoformat(),
         items=format_items(entries),
         existing=format_existing(existing),
+        recent=format_recent(history),
+        format_name=fmt["name"],
+        format_topic=fmt["topic"],
+        format_structure=fmt["structure"],
+        format_title=fmt["title"],
     )
-    data = parse_response(call_gemini(SYSTEM_PROMPT, prompt))
     allowed = {e.get("link", "") for e in entries if e.get("link")}
     allowed |= {f"/articles/{a['slug']}/" for a in existing}
+
+    # 執筆 → 確認 →（だめなら 1 回だけ書き直し → 確認）→ 良いほうを下書きにする
+    data = parse_response(call_gemini(SYSTEM_PROMPT, base_prompt, temperature=0.9))
+    data["body"], removed = sanitize_body(str(data["body"]), allowed)
+    result = review(data, fmt, history)
+    print(f"[INFO] 確認役の評価: {result.get('scores')} / 直す点 {len(result['must_fix'])} 件")
+    if not result["pass"] and not result.get("unreviewed"):
+        try:
+            revised = parse_response(call_gemini(SYSTEM_PROMPT, REVISION_PROMPT.format(
+                base=base_prompt, previous=json.dumps(data, ensure_ascii=False),
+                feedback="\n".join(f"- {f}" for f in result["must_fix"])), temperature=0.7))
+            revised["body"], removed2 = sanitize_body(str(revised["body"]), allowed)
+            result2 = review(revised, fmt, history)
+            print(f"[INFO] 書き直し後の評価: {result2.get('scores')} / 直す点 {len(result2['must_fix'])} 件")
+            if score_of(result2) > score_of(result):
+                data, removed, result = revised, removed2, result2
+        except Exception as e:  # 書き直しに失敗しても、最初の下書きは残す
+            print(f"[INFO] 書き直しに失敗したので、最初の下書きを使います: {type(e).__name__}")
+
     path = ARTICLES_DIR / f"{choose_slug(data.get('slug'), today)}.md"
-    body, removed = sanitize_body(str(data["body"]), allowed)
-    data["body"] = body
     ARTICLES_DIR.mkdir(parents=True, exist_ok=True)
-    path.write_text(build_draft_file(data, today, removed), encoding="utf-8")
+    path.write_text(build_draft_file(data, today, removed, result, fmt["name"]), encoding="utf-8")
+    save_history(history, {"date": today.isoformat(), "format": fmt["name"], "title": data["title"],
+                           "headings": extract_headings(data["body"]), "pass": result.get("pass"),
+                           "scores": result.get("scores")})
     rel = path.relative_to(BASE_DIR).as_posix()
-    annotate("notice", f"下書きを作成しました: {rel}（モデル: {GEMINI_MODEL}、外したリンク: {len(removed)} 件）")
+    annotate("notice", f"下書きを作成しました: {rel}（型: {fmt['name']}、モデル: {GEMINI_MODEL}、外したリンク: {len(removed)} 件）")
     set_output("draft", rel)
 
 

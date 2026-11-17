@@ -69,7 +69,7 @@ jobs:
       - name: Create AI draft (Sundays)
         id: ai
         continue-on-error: true # AI の失敗でサイト更新を止めない
-        timeout-minutes: 5
+        timeout-minutes: 15 # 執筆・確認・書き直し・確認で最大 4 回呼ぶ（無料枠の待ち時間を含む）
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           FORCE_AI_DRAFT: ${{ inputs.force_ai_draft && '1' || '' }}
@@ -81,7 +81,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           # dist/: 公開ページ / articles/: 自動作成した週刊まとめ記事 / data/deals_log.json: セール記事の記録
+          # data/ai_draft_history.json: AI 下書きの型の履歴（同じ型が続かないように）
           git add dist/ articles/ data/deals_log.json
+          [ -f data/ai_draft_history.json ] && git add data/ai_draft_history.json
           if git diff --cached --quiet; then
             echo "変更なし。コミットをスキップします。"
             echo "changed=false" >> "$GITHUB_OUTPUT"
