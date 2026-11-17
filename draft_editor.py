@@ -348,6 +348,7 @@ def run(comment: str, path: Path, today) -> tuple[str, bool, bool]:
                 found = search_items(keyword, lo, hi)
             except SearchError as e:
                 log.append(f"⚠️ {no} 番の候補を探せませんでした: {e}")
+                log.append(f"　代わりに、楽天市場アプリの「共有」→「リンクをコピー」で取ったリンクを `{no} https://a.r10.to/…` の形で送れば入れられます")
                 continue
             if not found:
                 log.append(f"⚠️ 「{keyword}」で、評価 4.0 以上・レビュー 10 件以上の商品が見つかりませんでした。言葉を変えてみてください")
