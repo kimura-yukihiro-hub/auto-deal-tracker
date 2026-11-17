@@ -174,3 +174,25 @@ def test_make_candidates_from_ai_searches(tmp_path, monkeypatch):
                                     {"keyword": "モニター 在宅", "min_price": None, "max_price": None}])
     saved = de.load_candidates(path.stem)
     assert set(saved) == {"1", "2"} and calls[0] == ("モニター 安い", 5000, 15000) and calls[1] == ("モニター 安い", None, None)
+
+
+def test_publish_reply_has_x_posts_with_url(tmp_path, monkeypatch):
+    _fake_network(monkeypatch)
+    monkeypatch.setattr(de, "X_POSTS_DIR", tmp_path / "x")
+    monkeypatch.setattr(ai_draft, "X_POSTS_DIR", tmp_path / "x")
+    path = _draft(tmp_path)
+    ai_draft.save_x_posts(path.stem, ["モニター選び、画面の大きさだけで決めていませんか。 #在宅ワーク https://bad.example.com", "あ" * 200])
+    de.run("1 https://a.r10.to/a\n2 https://a.r10.to/b", path, TODAY)
+    reply, _, published = de.run("要確認OK\n公開", path, TODAY)
+    assert published and "📣 X の告知文" in reply
+    assert "#在宅ワーク\nhttps://auto-deal-tracker.pages.dev/articles/monitor-guide/" in reply
+    assert "bad.example.com" not in reply and "あ" * 200 not in reply  # 余計な URL と長すぎる案は除く
+
+
+def test_publish_reply_x_posts_fallback(tmp_path, monkeypatch):
+    _fake_network(monkeypatch)
+    monkeypatch.setattr(de, "X_POSTS_DIR", tmp_path / "none")
+    path = _draft(tmp_path)
+    de.run("1 https://a.r10.to/a\n2 https://a.r10.to/b", path, TODAY)
+    reply, _, published = de.run("要確認OK\n公開", path, TODAY)
+    assert published and "「モニターの選び方」\nhttps://auto-deal-tracker.pages.dev/articles/monitor-guide/" in reply

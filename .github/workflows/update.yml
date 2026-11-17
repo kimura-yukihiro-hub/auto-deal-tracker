@@ -92,6 +92,8 @@ jobs:
           [ -f data/short_links.json ] && git add data/short_links.json
           # data/candidates/: AI 下書きの欄ごとの楽天の商品候補
           [ -d data/candidates ] && git add data/candidates
+          # data/x_posts/: AI 下書きの X の告知文の案（公開したときの返信に使う）
+          [ -d data/x_posts ] && git add data/x_posts
           if git diff --cached --quiet; then
             echo "変更なし。コミットをスキップします。"
             echo "changed=false" >> "$GITHUB_OUTPUT"

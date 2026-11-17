@@ -255,6 +255,27 @@ def status_text(text: str, candidates: dict | None = None) -> str:
     return "\n".join(out)
 
 
+X_POSTS_DIR = BASE_DIR / "data" / "x_posts"
+X_ACCOUNT_URL = "https://x.com/mihariban_sale"
+
+
+def x_post_section(text: str, slug: str) -> str:
+    """公開したときの返信に載せる、X の告知文（記事の URL つき）。AI の案がなければタイトルと紹介文から作る。"""
+    url = f"{SITE_URL}/articles/{slug}/"
+    try:
+        posts = json.loads((X_POSTS_DIR / f"{slug}.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        posts = []
+    if not posts:
+        title = (re.search(r"(?m)^title:\s*(.+)$", text) or [None, ""])[1].strip()
+        desc = (re.search(r"(?m)^description:\s*(.+)$", text) or [None, ""])[1].strip()
+        posts = [f"新しい記事を公開しました。\n「{title}」", f"{desc[:90]}"]
+    lines = ["", f"### 📣 X の告知文（[セールの見張り番の X]({X_ACCOUNT_URL}) に投稿。URL つきなので、そのままコピーできます）", ""]
+    for i, post in enumerate([p for p in posts if p], 1):
+        lines += [f"**案{i}**", "", "```text", f"{post}\n{url}", "```", ""]
+    return "\n".join(lines)
+
+
 def replace_once(text: str, old: str, new: str) -> tuple[str, int]:
     """公開前メモと見えない印（<!-- … -->）の外で old を探し、ちょうど 1 か所なら new に置き換える。
 
@@ -411,6 +432,7 @@ def run(comment: str, path: Path, today) -> tuple[str, bool, bool]:
             text, changed, published = new, True, True
             slug = path.stem
             log.append(f"🎉 公開しました。2〜3分でサイトに反映されます: {SITE_URL}/articles/{slug}/")
+            log.append(x_post_section(text, slug))
     if changed:
         path.write_text(text, encoding="utf-8")
 

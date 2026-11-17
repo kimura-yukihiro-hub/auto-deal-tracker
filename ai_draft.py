@@ -160,7 +160,9 @@ USER_PROMPT_TEMPLATE = """以下は {start} から {end} までに主要IT・家
 次の JSON 形式だけを出力してください（前後に説明文を付けない）:
 {{"title": "記事タイトル（{format_title}。""" + str(MAX_TITLE_LENGTH) + """字以内）", "slug": "URL 用の英小文字とハイフンの名前（例: robot-vacuum-guide）", "description": "記事の紹介文（80〜120字）", "tags": ["タグ1", "タグ2"], "body": "本文（Markdown）",
   "product_searches": [{{"keyword": "楽天市場で商品を探す言葉（例: PCモニター 23.8インチ フルHD）", "min_price": 下限の円（なければ null）, "max_price": 上限の円（なければ null）}}]}}
-product_searches は、結論の早見表の行と同じ順番・同じ数にする（各行に合う商品を、編集者が楽天市場で探すための条件）。"""
+product_searches は、結論の早見表の行と同じ順番・同じ数にする（各行に合う商品を、編集者が楽天市場で探すための条件）。
+JSON には "x_posts" も入れる: X（旧Twitter）で記事を告知する文章を3つ（それぞれ100文字以内、URL は書かない、ハッシュタグは2つまで）。
+切り口を変える（1つ目: 読者の迷いや失敗の代弁 / 2つ目: 記事で分かること / 3つ目: セールの時期との関係）。宣伝くささや誇張は避ける。"""
 
 REVIEW_SYSTEM = """あなたはセール情報サイト「セールの見張り番」の厳しい編集長です。AI が書いた下書きを、自分では書き直さずに採点します。
 次の観点を1〜5点で採点する。点数の目安（甘くつけない）:
@@ -631,6 +633,7 @@ def create_draft() -> None:
     # 執筆 → 確認 →（だめなら 1 回だけ書き直し → 確認）→ 良いほうを下書きにする
     data = parse_response(call_gemini(SYSTEM_PROMPT, base_prompt, temperature=0.9))
     first_searches = data.get("product_searches")  # 書き直しの版に検索条件がなかったときに使う
+    first_x_posts = data.get("x_posts")
     data["body"], removed = sanitize_body(str(data["body"]), allowed)
     result = review(data, fmt, history)
     print(f"[INFO] 確認役の評価: {result.get('scores')} / 直す点 {len(result['must_fix'])} 件")
@@ -651,12 +654,30 @@ def create_draft() -> None:
     ARTICLES_DIR.mkdir(parents=True, exist_ok=True)
     path.write_text(build_draft_file(data, today, removed, result, fmt["name"]), encoding="utf-8")
     make_candidates(path, data.get("product_searches") or first_searches)
+    save_x_posts(path.stem, data.get("x_posts") or first_x_posts)
     save_history(history, {"date": today.isoformat(), "format": fmt["name"], "title": data["title"],
                            "headings": extract_headings(data["body"]), "pass": result.get("pass"),
                            "scores": result.get("scores")})
     rel = path.relative_to(BASE_DIR).as_posix()
     annotate("notice", f"下書きを作成しました: {rel}（型: {fmt['name']}、モデル: {GEMINI_MODEL}、外したリンク: {len(removed)} 件）")
     set_output("draft", rel)
+
+
+X_POSTS_DIR = BASE_DIR / "data" / "x_posts"  # 記事ごとの X の告知文の案（公開したときの返信に URL を付けて載せる）
+X_POST_MAX = 100
+
+
+def save_x_posts(slug: str, posts) -> None:
+    if not isinstance(posts, list):
+        return
+    cleaned = []
+    for post in posts:
+        post = re.sub(r"https?://\S+", "", str(post)).strip()
+        if post and len(post) <= X_POST_MAX + 20:
+            cleaned.append(post)
+    if cleaned:
+        X_POSTS_DIR.mkdir(parents=True, exist_ok=True)
+        (X_POSTS_DIR / f"{slug}.json").write_text(json.dumps(cleaned[:3], ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def make_candidates(path: Path, searches) -> None:
