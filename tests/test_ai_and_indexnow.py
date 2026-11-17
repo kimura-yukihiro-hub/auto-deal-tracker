@@ -156,3 +156,11 @@ def test_create_draft_reviews_revises_and_keeps_best(tmp_path, monkeypatch):
     assert len(calls) == 4  # 執筆・確認・書き直し・確認
     history = json.loads((tmp_path / "history.json").read_text(encoding="utf-8"))
     assert history[-1]["format"] == "選び方" and history[-1]["pass"] is True
+
+
+def test_mechanical_checks_catch_question_opener_and_noisy_headings():
+    body = _good_body().replace("そのイヤホン、通勤ではうるさすぎるかもしれません。",
+                                "イヤホン選びで迷ったことはありませんか。")
+    body += "\n\n## とにかく安く済ませたい人向け（1万円台〜【要確認：価格帯を確認】）\n本文"
+    problems = " ".join(ai_draft.mechanical_checks({"title": "イヤホンの選び方", "body": body}))
+    assert "問いかけ" in problems and "見出しを短く" in problems
