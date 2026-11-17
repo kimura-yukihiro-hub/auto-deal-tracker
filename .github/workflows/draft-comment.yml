@@ -40,6 +40,10 @@ jobs:
           COMMENT_BODY: ${{ github.event.comment.body }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           REPLY_FILE: ${{ runner.temp }}/reply.md
+          # 「候補 1 キーワード」で楽天市場を検索するため
+          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+          RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+          RAKUTEN_SITE_URL: ${{ secrets.RAKUTEN_SITE_URL }}
         run: python draft_editor.py
 
       - name: 保存する
@@ -51,6 +55,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- "$FILE"
           [ -f data/short_links.json ] && git add data/short_links.json
+          [ -d data/candidates ] && git add data/candidates
           msg="docs: Issue のコメントで下書きを更新（$FILE）"
           [ "${{ steps.edit.outputs.published }}" = "true" ] && msg="docs: 記事を公開（$FILE）"
           git commit -m "$msg"

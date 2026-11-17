@@ -11,6 +11,8 @@
     直す 2年使っています → 3年使っています            … 本文の文字を置き換える（ちょうど 1 か所あるときだけ）
     削除 一般的なデスクで使う場合、                    … 本文から文字を消す（ちょうど 1 か所あるときだけ）
     タイトル 在宅ワークが変わるPCモニターの選び方       … タイトルを変える
+    1 B                                               … 1 番の欄に、候補の B を入れる（候補は Issue と返信に載る）
+    候補 1 PCモニター 23.8インチ 10000-20000          … 1 番の欄の候補を楽天で探し直す（価格帯は省略可）
     要確認OK                                          … 【要確認：…】の印をすべて外す（内容を確かめてから）
     公開                                              … 下書きのメモを消して公開する
     一覧                                              … 今の状態だけを返信する
@@ -28,7 +30,9 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from ai_draft import EDITOR_MEMO, EXPERIENCE_MEMO, MAX_TITLE_LENGTH, PRODUCT_MEMO, _yaml_value
-from rakuten_links import fetch_item, resolve
+import json
+
+from rakuten_links import SearchError, fetch_item, resolve, search_items
 
 BASE_DIR = Path(__file__).resolve().parent
 JST = timezone(timedelta(hours=9))
@@ -37,6 +41,28 @@ SLOT_MARK_RE = re.compile(r"\s*<!--slot:(\d+)-->")
 CHECK_RE = re.compile(r"【要確認[^】]*】")
 PRICE_TEXT_RE = re.compile(r"(?:約)?[\d,]+円（\d+月\d+日時点）|価格はリンク先で確認してください")
 PRICE_HEADER_WORDS = ("価格", "合計", "目安", "予算")
+CANDIDATES_DIR = BASE_DIR / "data" / "candidates"  # 欄ごとの商品候補（記事の名前.json）
+LETTERS = "ABC"
+
+
+def load_candidates(slug: str) -> dict[str, list[dict]]:
+    try:
+        return json.loads((CANDIDATES_DIR / f"{slug}.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def save_candidates(slug: str, data: dict) -> None:
+    CANDIDATES_DIR.mkdir(parents=True, exist_ok=True)
+    (CANDIDATES_DIR / f"{slug}.json").write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def candidate_lines(cands: list[dict]) -> list[str]:
+    out = []
+    for letter, c in zip(LETTERS, cands):
+        price = f"{c['price']:,}円" if c.get("price") else "価格はリンク先"
+        out.append(f"    - **{letter}**: [{c['name']}]({c['url']}) {price} ★{c.get('review_average', 0):.1f}（{c.get('review_count', 0):,}件）")
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -135,6 +161,7 @@ def set_price(lines: list[str], slot: Slot, price: int, today) -> bool:
 
 SP = r"[\s　]"  # 半角・全角のスペース
 ARROW = r"(?:→|->|⇒|＞)"
+ZEN2HAN = str.maketrans("ＡＢＣａｂｃ０１２３４５６７８９", "ABCabc0123456789")
 
 
 def parse_commands(comment: str) -> list[tuple]:
@@ -150,6 +177,11 @@ def parse_commands(comment: str) -> list[tuple]:
             cmds.append(("replace", m.group(1), ""))
         elif m := re.match(rf"^タイトル{SP}*[:：]?{SP}*(.+)$", original):
             cmds.append(("title", m.group(1).strip()))
+        elif m := re.match(r"^(\d+)\s*[:：.、)]?\s*([A-Ca-c])$", line.translate(ZEN2HAN)):
+            cmds.append(("choose", int(m.group(1)), m.group(2).upper()))
+        elif m := re.match(r"^候補\s*(\d+)\s+(.+?)(?:\s+(\d+)\s*[-〜~～]\s*(\d+))?$", line.translate(ZEN2HAN)):
+            lo, hi = (int(m.group(3)), int(m.group(4))) if m.group(3) else (None, None)
+            cmds.append(("search", int(m.group(1)), m.group(2).strip(), lo, hi))
         elif m := re.match(r"^(\d+)\s*[:：.、)]?\s*(https?://\S+)\s*(.*)$", line):
             cmds.append(("product", int(m.group(1)), m.group(2), m.group(3).strip()))
         elif m := re.match(r"^価格\s*(\d+)\s*[:：]?\s*([\d,]+)\s*円?$", line):
@@ -196,7 +228,7 @@ def _without_notes(body: str) -> str:
     return re.sub(r"<!--(?!slot:).*?-->", "", body, flags=re.S)
 
 
-def status_text(text: str) -> str:
+def status_text(text: str, candidates: dict | None = None) -> str:
     _, body = split_front_matter(text)
     lines = body.splitlines()
     visible = _without_notes(body).splitlines()
@@ -205,6 +237,8 @@ def status_text(text: str) -> str:
     slots = find_slots(lines)
     for s in slots:
         out.append(f"- {'✅' if s.filled(lines) else '⬜'} **{s.no}**: {s.label}")
+        if not s.filled(lines) and candidates and candidates.get(str(s.no)):
+            out += candidate_lines(candidates[str(s.no)])
     if not slots:
         out.append("- （なし）")
     exp, memo = body.count(EXPERIENCE_MEMO), body.count(EDITOR_MEMO)
@@ -239,6 +273,8 @@ HELP = """<details><summary>書き方</summary>
 ```
 1 https://a.r10.to/xxxx
 2 https://item.rakuten.co.jp/ショップ/商品/ 短い商品名
+3 B
+候補 3 PCモニター 27インチ 20000-40000
 価格 2 12800
 体験 実際に使っていて良かったこと
 メモ 選んだ理由
@@ -263,6 +299,7 @@ def run(comment: str, path: Path, today) -> tuple[str, bool, bool]:
     lines = body.split("\n")
     log: list[str] = []
     changed = published = False
+    candidates = load_candidates(path.stem)
     want_publish = any(c[0] == "publish" for c in cmds)
 
     for cmd in cmds:
@@ -288,6 +325,38 @@ def run(comment: str, path: Path, today) -> tuple[str, bool, bool]:
             changed = True
             got = f"「{item['name'] or '（商品名を取れませんでした）'}」 {price_text(item.get('price'), today)}"
             log.append(f"✅ {no} 番（{slot.label}）に入れました: {got}")
+        elif kind == "choose":
+            _, no, letter = cmd
+            slot = slots.get(no)
+            cands = candidates.get(str(no)) or []
+            idx = LETTERS.index(letter)
+            if slot is None or idx >= len(cands):
+                log.append(f"⚠️ {no} 番の候補 {letter} はありません（「候補 {no} キーワード」で探せます）")
+                continue
+            if slot.filled(lines):
+                log.append(f"⚠️ {no} 番（{slot.label}）はもう入っています。変えるときは PC で編集してください")
+                continue
+            fill_slot(lines, slot, cands[idx], today)
+            changed = True
+            log.append(f"✅ {no} 番（{slot.label}）に候補 {letter} を入れました: 「{cands[idx]['name']}」 {price_text(cands[idx].get('price'), today)}")
+        elif kind == "search":
+            _, no, keyword, lo, hi = cmd
+            if no not in slots:
+                log.append(f"⚠️ {no} 番の欄はありません")
+                continue
+            try:
+                found = search_items(keyword, lo, hi)
+            except SearchError as e:
+                log.append(f"⚠️ {no} 番の候補を探せませんでした: {e}")
+                continue
+            if not found:
+                log.append(f"⚠️ 「{keyword}」で、評価 4.0 以上・レビュー 10 件以上の商品が見つかりませんでした。言葉を変えてみてください")
+                continue
+            candidates[str(no)] = found
+            save_candidates(path.stem, candidates)
+            changed = True
+            log.append(f"🔎 {no} 番の候補を「{keyword}」で探しました。`{no} A` のように送ると入ります")
+            log += candidate_lines(found)
         elif kind == "price":
             _, no, price = cmd
             slot = slots.get(no)
@@ -346,7 +415,7 @@ def run(comment: str, path: Path, today) -> tuple[str, bool, bool]:
 
     reply = "\n".join(log)
     if not published:
-        reply += "\n\n---\n" + status_text(text) + "\n\n" + HELP
+        reply += "\n\n---\n" + status_text(text, candidates) + "\n\n" + HELP
     return reply, changed, published
 
 

@@ -9,7 +9,9 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import time
 from html import unescape
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -112,6 +114,87 @@ def short_name(title: str) -> str:
     cut = name[:MAX_NAME_LENGTH]
     space = max(cut.rfind(" "), cut.rfind("　"))
     return (cut[:space] if space >= 12 else cut).strip() + "…"
+
+
+# ---------------------------------------------------------------------------
+# 商品検索（下書きの欄ごとの候補を出す）
+# ---------------------------------------------------------------------------
+
+# ランキング（fetch_and_build.py）と同じ新しい API を先に試し、なければ以前からある呼び出し先を使う
+SEARCH_ENDPOINTS = [
+    "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20220601",
+    "https://app.rakuten.co.jp/services/api/IchibaItem/Search/20220601",
+]
+MIN_REVIEW_AVERAGE = 4.0
+MIN_REVIEW_COUNT = 10
+CANDIDATES_PER_SLOT = 3
+
+
+class SearchError(RuntimeError):
+    pass
+
+
+def _api_auth() -> tuple[dict, dict]:
+    app_id = os.environ.get("RAKUTEN_APP_ID", "")
+    access_key = os.environ.get("RAKUTEN_ACCESS_KEY", "")
+    site = os.environ.get("RAKUTEN_SITE_URL", "")
+    if not app_id:
+        raise SearchError("楽天のアプリID（RAKUTEN_APP_ID）が設定されていません")
+    params = {"applicationId": app_id, "format": "json", "formatVersion": 2}
+    if access_key:
+        params["accessKey"] = access_key
+    headers = dict(HEADERS)
+    if site:
+        parsed = urlparse(site)
+        headers["Referer"] = site
+        headers["Origin"] = f"{parsed.scheme}://{parsed.netloc}"
+    return params, headers
+
+
+def search_items(keyword: str, min_price: int | None = None, max_price: int | None = None) -> list[dict]:
+    """在庫があり、レビューが多く評価の高い商品を最大 3 件返す。"""
+    params, headers = _api_auth()
+    params.update({
+        "keyword": keyword[:120],
+        "availability": 1,
+        "sort": "-reviewCount",
+        "hits": 30,
+        "elements": "itemName,itemPrice,itemUrl,itemCode,shopName,reviewAverage,reviewCount",
+    })
+    if min_price:
+        params["minPrice"] = int(min_price)
+    if max_price:
+        params["maxPrice"] = int(max_price)
+    last_error = ""
+    for endpoint in SEARCH_ENDPOINTS:
+        try:
+            resp = requests.get(endpoint, params=params, headers=headers, timeout=TIMEOUT)
+        except requests.RequestException as e:
+            last_error = f"通信失敗 ({type(e).__name__})"
+            continue
+        if resp.status_code == 429:
+            time.sleep(2)
+            resp = requests.get(endpoint, params=params, headers=headers, timeout=TIMEOUT)
+        if resp.status_code in (404, 405):
+            last_error = f"{endpoint} が見つかりません (HTTP {resp.status_code})"
+            continue
+        if resp.status_code != 200:
+            raise SearchError(f"HTTP {resp.status_code} {resp.text[:200]}")
+        data = resp.json()
+        items = []
+        for raw in data.get("Items", data.get("items", [])):
+            it = raw.get("Item", raw) if isinstance(raw, dict) else {}
+            url = normalize(it.get("itemUrl", "") or "")
+            avg, count = float(it.get("reviewAverage") or 0), int(it.get("reviewCount") or 0)
+            if not url or avg < MIN_REVIEW_AVERAGE or count < MIN_REVIEW_COUNT:
+                continue
+            items.append({"url": url, "name": short_name(re.sub(r"<[^>]+>", "", it.get("itemName", ""))),
+                          "price": int(it.get("itemPrice") or 0) or None, "review_average": avg,
+                          "review_count": count, "shop": it.get("shopName", "")})
+            if len(items) >= CANDIDATES_PER_SLOT:
+                break
+        return items
+    raise SearchError(last_error or "商品検索に失敗しました")
 
 
 def fetch_item(url: str) -> dict:

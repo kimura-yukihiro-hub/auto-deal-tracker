@@ -119,3 +119,58 @@ def test_replace_refuses_missing_or_ambiguous_and_ignores_notes(tmp_path):
     # 公開前メモ（<!-- … -->）の中の文字は直さない
     reply, changed, _ = de.run("削除 この下書きは AI（Gemini）が自動で作成しました", path, TODAY)
     assert not changed and "見つかりませんでした" in reply
+
+
+CANDS = [
+    {"url": "https://item.rakuten.co.jp/s/a/", "name": "候補A", "price": 9800, "review_average": 4.5, "review_count": 120, "shop": "s"},
+    {"url": "https://item.rakuten.co.jp/s/b/", "name": "候補B", "price": 12800, "review_average": 4.3, "review_count": 80, "shop": "s"},
+]
+
+
+def test_choose_candidate_and_search(tmp_path, monkeypatch):
+    monkeypatch.setattr(de, "CANDIDATES_DIR", tmp_path / "cands")
+    path = _draft(tmp_path)
+    de.save_candidates(path.stem, {"1": CANDS})
+    reply, changed, _ = de.run("一覧", path, TODAY)
+    assert "**A**: [候補A](https://item.rakuten.co.jp/s/a/) 9,800円 ★4.5（120件）" in reply  # 空いている欄に候補が出る
+    reply, changed, _ = de.run("１ ｂ\n1 C", path, TODAY)  # 全角でも読める。C はない
+    text = path.read_text(encoding="utf-8")
+    assert changed and "[候補B](https://item.rakuten.co.jp/s/b/) | 約12,800円（11月18日時点）" in text
+    assert "候補 C はありません" in reply
+    # 探し直し: 価格帯つき
+    calls = []
+    monkeypatch.setattr(de, "search_items", lambda kw, lo, hi: calls.append((kw, lo, hi)) or CANDS[:1])
+    reply, changed, _ = de.run("候補 2 PCモニター 27インチ 20000-40000", path, TODAY)
+    assert calls == [("PCモニター 27インチ", 20000, 40000)] and changed
+    assert de.load_candidates(path.stem)["2"] == CANDS[:1] and "`2 A` のように送ると入ります" in reply
+
+
+def test_search_error_is_reported(tmp_path, monkeypatch):
+    monkeypatch.setattr(de, "CANDIDATES_DIR", tmp_path / "cands")
+    path = _draft(tmp_path)
+
+    def boom(*a):
+        raise de.SearchError("楽天のアプリID（RAKUTEN_APP_ID）が設定されていません")
+
+    monkeypatch.setattr(de, "search_items", boom)
+    reply, changed, _ = de.run("候補 1 モニター", path, TODAY)
+    assert not changed and "候補を探せませんでした" in reply
+
+
+def test_make_candidates_from_ai_searches(tmp_path, monkeypatch):
+    import rakuten_links
+
+    monkeypatch.setattr(de, "CANDIDATES_DIR", tmp_path / "cands")
+    monkeypatch.setattr(ai_draft.time, "sleep", lambda s: None)
+    calls = []
+
+    def fake_search(kw, lo=None, hi=None):
+        calls.append((kw, lo, hi))
+        return [] if lo else CANDS  # 価格帯つきで 0 件なら、価格帯なしで探し直す
+
+    monkeypatch.setattr(rakuten_links, "search_items", fake_search)
+    path = _draft(tmp_path)
+    ai_draft.make_candidates(path, [{"keyword": "モニター 安い", "min_price": 5000, "max_price": 15000},
+                                    {"keyword": "モニター 在宅", "min_price": None, "max_price": None}])
+    saved = de.load_candidates(path.stem)
+    assert set(saved) == {"1", "2"} and calls[0] == ("モニター 安い", 5000, 15000) and calls[1] == ("モニター 安い", None, None)
