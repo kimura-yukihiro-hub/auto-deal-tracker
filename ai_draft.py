@@ -463,7 +463,7 @@ def mechanical_checks(data: dict) -> list[str]:
         first = re.split(r"(?<=[。！？])", lines[0])[0]
         if re.match(r"^(今回は|この記事では|本記事では|こんにちは)", first) or len(first) > 45:
             problems.append(f"導入の最初の1文を、40字以内で読者の手が止まる一文にする（今: 「{first[:40]}」）")
-        elif re.search(r"(ありませんか|ないでしょうか|でしょうか|ですよね|ませんか)[。？?]?$", first):
+        elif re.search(r"(ありませんか|ないでしょうか|でしょうか|ですよね|ませんか)[。？?]?$", first)                 or re.search(r"(人|方)は(多い|少なくない)(です|でしょう|のでは)", first):
             problems.append(f"導入の最初の1文が、ありきたりの問いかけになっている。言い切りや具体的な場面にする（今: 「{first[:40]}」）")
         if re.search(r"(いかがでしたか|参考になれば幸いです)", lines[-1]):
             problems.append("最後の1文を決まり文句にしない")

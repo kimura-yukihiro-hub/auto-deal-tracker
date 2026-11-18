@@ -202,3 +202,9 @@ def test_call_gemini_switches_on_daily_quota(monkeypatch):
     monkeypatch.setattr(ai_draft.requests, "post", post)
     assert ai_draft.call_gemini("s", "p") == "ok"
     assert len(calls) == 2
+
+
+def test_mechanical_checks_flags_many_people_opening():
+    body = _good_body().replace("そのイヤホン、通勤ではうるさすぎるかもしれません。", "どちらを買うべきか迷う人は多いです。")
+    problems = " ".join(ai_draft.mechanical_checks({"title": "イヤホンの選び方｜通勤別のおすすめ", "body": body}))
+    assert "ありきたり" in problems
