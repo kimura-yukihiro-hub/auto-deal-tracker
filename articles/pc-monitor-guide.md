@@ -14,9 +14,9 @@ tags: PCモニター, 選び方, パソコン周辺機器, 在宅ワーク
 
 | こんな人に | おすすめ | 価格の目安 |
 | --- | --- | --- |
-| とにかく安く買いたい | [楽天市場で見る](https://item.rakuten.co.jp/olebliss/pc-hdblc-9h-238-169-195/) | 価格はリンク先で確認してください |
-| 在宅ワークや事務作業を快適にしたい | [楽天市場で見る](https://item.rakuten.co.jp/fpdvision/h24t27-jp/) | 価格はリンク先で確認してください |
-| ゲームや動画編集を楽しみたい | [楽天市場で見る](https://item.rakuten.co.jp/rcmdse/b8-4573656780221/) | 価格はリンク先で確認してください |
+| とにかく安く買いたい | [Acer AOPEN 24SB3YP1bi（23.8インチ・フルHD・120Hz）](https://item.rakuten.co.jp/acer-direct/24sb3yp1bi/) | 約12,580円（11月18日時点） |
+| 在宅ワークや事務作業を快適にしたい | [Xiaomi Monitor A27Qi 2026（27インチ・WQHD・120Hz）](https://item.rakuten.co.jp/xiaomiofficial/m63061/) | 約20,580円（11月18日時点） |
+| ゲームや動画編集を楽しみたい | [ASUS TUF Gaming VG27AQ5F（27インチ・WQHD・最大220Hz）](https://item.rakuten.co.jp/asus-store/a940xyh/) | 約36,162円（11月18日時点） |
 
 詳しくは後半の『予算別のおすすめ』で紹介しています。
 
@@ -54,19 +54,19 @@ tags: PCモニター, 選び方, パソコン周辺機器, 在宅ワーク
 
 基本的な表示ができれば問題ないという人には、23.8インチ前後のフルHDモニターが向いています。必要最低限の機能を備えており、導入費用を抑えられます。
 
-おすすめ：[楽天市場で見る](https://item.rakuten.co.jp/olebliss/pc-hdblc-9h-238-169-195/)　価格はリンク先で確認してください
+おすすめ：[Acer AOPEN 24SB3YP1bi（23.8インチ・フルHD・120Hz）](https://item.rakuten.co.jp/acer-direct/24sb3yp1bi/)　約12,580円（11月18日時点）
 
 ### 在宅ワーク・事務作業を快適にしたい人向け（2万円台〜）
 
 文字が見やすい27インチ程度のサイズで、WQHD解像度やアイケア機能を備えたモデルが向いています。画面を広々使えて目の疲れも軽減しやすいため、長時間の作業にぴったりです。
 
-おすすめ：[楽天市場で見る](https://item.rakuten.co.jp/fpdvision/h24t27-jp/)　価格はリンク先で確認してください
+おすすめ：[Xiaomi Monitor A27Qi 2026（27インチ・WQHD・120Hz）](https://item.rakuten.co.jp/xiaomiofficial/m63061/)　約20,580円（11月18日時点）
 
 ### ゲーミングや動画編集に使いたい人向け（3万円台〜）
 
 高リフレッシュレート（144Hz以上）に対応したモデルや、発色が鮮やかな液晶パネルを搭載したモデルが適しています。動きのある映像も滑らかに表示できます。
 
-おすすめ：[楽天市場で見る](https://item.rakuten.co.jp/rcmdse/b8-4573656780221/)　価格はリンク先で確認してください
+おすすめ：[ASUS TUF Gaming VG27AQ5F（27インチ・WQHD・最大220Hz）](https://item.rakuten.co.jp/asus-store/a940xyh/)　約36,162円（11月18日時点）
 
 ### 最近のセールニュースから
 
