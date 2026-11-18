@@ -327,15 +327,39 @@ def _extract_text(data) -> str:
     return ""
 
 
-def call_gemini(system: str, prompt: str, temperature: float | None = None, retries: int = 3) -> str:
+# 混雑（500/503/504）が続いたときや、1 日の無料枠の上限に達したときに切り替える予備のモデル（空にすると切り替えない）。
+# 1 日の上限はモデルごとに別なので、予備なら書ける。切り替えたら、この実行の残りも予備で行う。
+FALLBACK_MODEL = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash-lite").strip()
+_model = {"name": GEMINI_MODEL}
+
+
+def _switch_to_fallback(reason: str) -> bool:
+    if not FALLBACK_MODEL or _model["name"] == FALLBACK_MODEL:
+        return False
+    print(f"[INFO] {_model['name']} は{reason}ので、{FALLBACK_MODEL} に切り替えます")
+    _model["name"] = FALLBACK_MODEL
+    return True
+
+
+def call_gemini(system: str, prompt: str, temperature: float | None = None, retries: int = 4) -> str:
     """429（無料枠の上限）や 503 は少し待って再試行する。それ以外のエラーはそのまま上げる。"""
+    overloaded = 0
     for attempt in range(1, retries + 1):
         try:
             return _call_gemini_once(system, prompt, temperature)
         except RuntimeError as e:
-            if attempt == retries or not re.search(r"HTTP (429|500|503)", str(e)):
+            msg = str(e)
+            if attempt == retries or not re.search(r"HTTP (429|500|503|504)", msg):
                 raise
-            wait = 60 if "HTTP 429" in str(e) else 20
+            if "HTTP 429" in msg and re.search(r"PerDay|per day|daily", msg, flags=re.I):
+                if _switch_to_fallback("今日の無料枠の上限に達した"):
+                    continue
+                raise
+            if re.search(r"HTTP (500|503|504)", msg):
+                overloaded += 1
+                if overloaded >= 2 and _switch_to_fallback("混雑している"):
+                    continue
+            wait = 60 if "HTTP 429" in msg else 20
             print(f"[INFO] Gemini が混雑・上限のため {wait} 秒待って再試行します（{attempt}/{retries}）")
             time.sleep(wait)
     raise RuntimeError("到達しない")
@@ -348,7 +372,7 @@ def _call_gemini_once(system: str, prompt: str, temperature: float | None) -> st
         gen_config["temperature"] = temperature
     # 1) 従来の generateContent
     resp = requests.post(
-        f"{GEMINI_BASE}/models/{GEMINI_MODEL}:generateContent",
+        f"{GEMINI_BASE}/models/{_model['name']}:generateContent",
         headers=headers,
         json={
             "system_instruction": {"parts": [{"text": system}]},
@@ -366,7 +390,7 @@ def _call_gemini_once(system: str, prompt: str, temperature: float | None) -> st
         f"{GEMINI_BASE}/interactions",
         headers={**headers, "Api-Revision": "2026-05-20"},
         json={
-            "model": GEMINI_MODEL,
+            "model": _model["name"],
             "system_instruction": system,
             "input": prompt,
             "generation_config": {"max_output_tokens": 8192},
@@ -659,7 +683,7 @@ def create_draft() -> None:
                            "headings": extract_headings(data["body"]), "pass": result.get("pass"),
                            "scores": result.get("scores")})
     rel = path.relative_to(BASE_DIR).as_posix()
-    annotate("notice", f"下書きを作成しました: {rel}（型: {fmt['name']}、モデル: {GEMINI_MODEL}、外したリンク: {len(removed)} 件）")
+    annotate("notice", f"下書きを作成しました: {rel}（型: {fmt['name']}、モデル: {_model['name']}、外したリンク: {len(removed)} 件）")
     set_output("draft", rel)
 
 

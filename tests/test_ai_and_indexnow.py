@@ -164,3 +164,41 @@ def test_mechanical_checks_catch_question_opener_and_noisy_headings():
     body += "\n\n## とにかく安く済ませたい人向け（1万円台〜【要確認：価格帯を確認】）\n本文"
     problems = " ".join(ai_draft.mechanical_checks({"title": "イヤホンの選び方", "body": body}))
     assert "問いかけ" in problems and "見出しを短く" in problems
+
+
+class _Resp:
+    def __init__(self, status, text="", data=None):
+        self.status_code, self.text, self._data = status, text, data
+
+    def json(self):
+        return self._data
+
+
+def _fake_post(busy_model, busy_status, busy_text):
+    calls = []
+
+    def post(url, **kw):
+        calls.append(url)
+        if f"/models/{busy_model}:" in url:
+            return _Resp(busy_status, busy_text)
+        return _Resp(200, data={"candidates": [{"content": {"parts": [{"text": "ok"}]}}]})
+    return post, calls
+
+
+def test_call_gemini_switches_to_fallback_when_overloaded(monkeypatch):
+    monkeypatch.setattr(ai_draft.time, "sleep", lambda s: None)
+    monkeypatch.setattr(ai_draft, "_model", {"name": "busy-model"})
+    post, calls = _fake_post("busy-model", 503, "This model is currently experiencing high demand")
+    monkeypatch.setattr(ai_draft.requests, "post", post)
+    assert ai_draft.call_gemini("s", "p") == "ok"
+    assert len(calls) == 3 and ai_draft.FALLBACK_MODEL in calls[-1]
+    assert ai_draft._model["name"] == ai_draft.FALLBACK_MODEL  # 残りの呼び出しも予備で
+
+
+def test_call_gemini_switches_on_daily_quota(monkeypatch):
+    monkeypatch.setattr(ai_draft.time, "sleep", lambda s: None)
+    monkeypatch.setattr(ai_draft, "_model", {"name": "busy-model"})
+    post, calls = _fake_post("busy-model", 429, "quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier")
+    monkeypatch.setattr(ai_draft.requests, "post", post)
+    assert ai_draft.call_gemini("s", "p") == "ok"
+    assert len(calls) == 2
