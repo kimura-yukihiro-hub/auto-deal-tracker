@@ -196,3 +196,18 @@ def test_publish_reply_x_posts_fallback(tmp_path, monkeypatch):
     de.run("1 https://a.r10.to/a\n2 https://a.r10.to/b", path, TODAY)
     reply, _, published = de.run("要確認OK\n公開", path, TODAY)
     assert published and "「モニターの選び方」\nhttps://auto-deal-tracker.pages.dev/articles/monitor-guide/" in reply
+
+
+def test_parse_replace_block():
+    """編集ページが送る置き換えブロック（矢印・複数行・削除）と、ふつうの指示を一緒に読める。"""
+    comment = (
+        "【置き換え】\r\nA → B の順に選ぶ\r\n2行目\r\n【↓】\r\nC → D の順に選ぶ\r\n【ここまで】\r\n"
+        "【置き換え】\n消す文\n【↓】\n【ここまで】\n"
+        "タイトル 新しい題\n公開"
+    )
+    assert de.parse_commands(comment) == [
+        ("replace", "A → B の順に選ぶ\n2行目", "C → D の順に選ぶ"),
+        ("replace", "消す文", ""),
+        ("title", "新しい題"),
+        ("publish",),
+    ]

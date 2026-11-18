@@ -164,8 +164,15 @@ ARROW = r"(?:→|->|⇒|＞)"
 ZEN2HAN = str.maketrans("ＡＢＣａｂｃ０１２３４５６７８９", "ABCabc0123456789")
 
 
+# 編集ページ（draft-desk）が送る置き換えの指示。矢印を含む文や複数行の文も直せるように、ブロックで囲む:
+#   【置き換え】 / 古い文字（複数行可） / 【↓】 / 新しい文字（空なら削除） / 【ここまで】 を 1 行ずつ
+BLOCK_RE = re.compile(r"^【置き換え】[ \t]*\n(.*?)\n【↓】[ \t]*\n(.*?)\n?【ここまで】[ \t]*$", flags=re.S | re.M)
+
+
 def parse_commands(comment: str) -> list[tuple]:
-    cmds: list[tuple] = []
+    comment = comment.replace("\r\n", "\n")
+    cmds: list[tuple] = [("replace", m.group(1), m.group(2)) for m in BLOCK_RE.finditer(comment)]
+    comment = BLOCK_RE.sub("", comment)
     for raw in comment.splitlines():
         original = raw.strip()
         line = original.replace("　", " ")  # 指示の見分けにだけ使う。直す文字は original から取る
