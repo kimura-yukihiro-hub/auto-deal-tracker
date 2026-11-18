@@ -44,6 +44,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          # 順番待ち（concurrency）のあいだに前の実行が push した版から始める。
+          # 既定の「起動したときの版」だと、前の実行が作った dist/ とぶつかって push できない（2026-11-18）
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v6
