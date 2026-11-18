@@ -1363,6 +1363,13 @@ def render_rss_feed(articles: list[Article]) -> str:
 """
 
 
+# URL（ファイル名）を変えた記事の転送元 → 転送先
+ARTICLE_REDIRECTS = {
+    "/articles/ai-draft-2026-11-11/": "/articles/sale-picks-2026-11-11/",
+    "/articles/ai-draft-2026-11-11": "/articles/sale-picks-2026-11-11/",
+}
+
+
 def write_seo_files(articles: list[Article] | None = None) -> None:
     """検索エンジン向けの robots.txt・sitemap.xml・IndexNow キーファイルを dist/ に出力する。"""
     out = OUTPUT_PATH.parent
@@ -1372,6 +1379,10 @@ def write_seo_files(articles: list[Article] | None = None) -> None:
         '<?xml version="1.0"?>\n<users>\n\t<user>'
         f"{html.escape(BING_SITE_VERIFICATION)}</user>\n</users>\n",
         encoding="utf-8",
+    )
+    # URL を変えた記事の旧 URL から新 URL への転送（Cloudflare Pages の _redirects）
+    (out / "_redirects").write_text(
+        "".join(f"{src} {dst} 301\n" for src, dst in ARTICLE_REDIRECTS.items()), encoding="utf-8"
     )
     (out / "robots.txt").write_text(
         f"User-agent: *\nAllow: /\n\nSitemap: {SITE_URL}sitemap.xml\n", encoding="utf-8"
