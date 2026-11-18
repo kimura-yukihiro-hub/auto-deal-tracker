@@ -211,3 +211,14 @@ def test_parse_replace_block():
         ("title", "新しい題"),
         ("publish",),
     ]
+
+
+def test_publish_ignores_check_marks_in_notes():
+    """本文の【要確認】を先に直したあとでも、公開前メモの中の説明文（【要確認：…】）に引っかからず公開できる。"""
+    from datetime import date
+    text = "---\ntitle: t\ndate: 2026-11-01\ndraft: true\n---\n\n<!--\n  1. 【要確認：…】の部分を調べて消す\n-->\n\n本文です。\n"
+    out, problems = de.publish_text(text, date(2026, 11, 18))
+    assert problems == []
+    assert "draft:" not in out and "要確認" not in out and "date: 2026-11-18" in out
+    out, problems = de.publish_text(text.replace("本文です。", "本文です【要確認：数字】。"), date(2026, 11, 18))
+    assert out is None and problems

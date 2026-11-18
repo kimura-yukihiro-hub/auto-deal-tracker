@@ -215,9 +215,10 @@ def publish_text(text: str, today) -> tuple[str | None, list[str]]:
     """公開できる形にする。できないときは (None, 理由)。"""
     front, body = split_front_matter(text)
     problems = []
-    if PRODUCT_MEMO in body:
+    visible = _without_notes(body)  # 公開前メモ（<!-- -->）の中の説明文は数えない
+    if PRODUCT_MEMO in visible:
         problems.append("商品の欄がまだ残っています（下の「商品の欄」を見てください）")
-    if CHECK_RE.search(body):
+    if CHECK_RE.search(visible):
         problems.append("【要確認：…】が残っています。内容を確かめてから「要確認OK」と書いてください")
     if problems:
         return None, problems
