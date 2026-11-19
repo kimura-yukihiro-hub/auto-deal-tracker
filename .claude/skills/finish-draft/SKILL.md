@@ -1,0 +1,60 @@
+---
+name: finish-draft
+description: AI が作った記事の下書き（articles/*.md の draft: true）を仕上げて公開するときの手順。「下書きを仕上げて」「AI下書きを公開して」「記事の【要確認】を確かめて」「商品の欄を埋めて」など、下書き記事を公開できる状態にするときに使う。
+---
+
+# AI 下書きを仕上げて公開する
+
+下書きは毎週 `ai_draft.py` が `articles/<slug>.md`（`draft: true`）として作り、Issue「📝 AI下書きの確認」で知らせる。スマホでは Issue のコメント（`draft_editor.py`）で仕上げるが、ここでは同じ処理を手元で行う。**仕上げの処理は `draft_editor.py` の関数をそのまま使い、自分で書き方を作らない**（Issue から直した場合と結果がそろうように）。
+
+## 1. 下書きを見つけて、今の状態を見る
+
+```sh
+grep -l '^draft: true' articles/*.md | grep -v '/_'
+python -c "import sys; from pathlib import Path; from draft_editor import status_text, load_candidates; p=Path(sys.argv[1]); print(status_text(p.read_text(encoding='utf-8'), load_candidates(p.stem)))" articles/<slug>.md
+```
+
+状態には、商品の欄（⬜ 未記入・✅ 記入済み）、体験の欄・選んだ理由の欄の残り、【要確認】の一覧が出る。
+
+## 2. 指示は draft_editor の書き方で実行する
+Issue のコメントと同じ指示を、手元で実行できる（1 行に 1 つ）。
+
+```sh
+python - <<'PY'
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from draft_editor import run
+reply, changed, published = run("""ここに指示を書く""", Path("articles/<slug>.md"), datetime.now(timezone(timedelta(hours=9))).date())
+print(reply)
+PY
+```
+
+使える指示は `draft_editor.py` 冒頭の説明のとおり（`1 <楽天のURL>`・`価格 1 12800`・`1 B`・`候補 1 ...`・`体験 ...`・`メモ ...`・`直す A → B`・`削除 ...`・`タイトル ...`・`要確認OK`・`公開`・`一覧`）。
+
+## 3. 商品の欄
+- 入れる商品は、**ユーザーが選んだもの**だけ。候補（`data/candidates/<slug>.json`。状態の A・B・C）から選ぶか、ユーザーが示した楽天市場の URL を使う。自分で商品を決めない。
+- 価格は楽天のページから自動で入る（楽天のキーがない環境では入らない）。入らなかったら、ユーザーに価格を確かめてもらい `価格 <番号> <円>` で入れる。価格は「◯月◯日時点」と付く。
+
+## 4. 体験の欄・選んだ理由の欄
+- **ここはユーザー本人の言葉だけを入れる**。使った感想や選んだ理由を、代わりに作文しない。
+- ユーザーから聞けなかった欄は空のままでよい（公開のときに欄ごと消える）。
+
+## 5. 【要確認】を確かめる
+- 【要確認：…】の印がついた文を 1 つずつ、メーカーや販売元の**公式の情報**で確かめる。合っていれば残し、違えば `直す` で正しく、確かめられなければ `削除` で文ごと消す。
+- すべて確かめ終わってから `要確認OK` で印を外す。**確かめずに印だけ外さない**。何を確かめ、何を直し・消したかを記録しておき、最後にユーザーに伝える。
+
+## 6. 公開前の見直し
+- 「最安」「No.1」「絶対」など出典のない断定や評価がないか。価格やセール期間が「掲載時点」と分かるか。
+- タイトルは 32 字以内（`ai_draft.py` の `MAX_TITLE_LENGTH`）。
+- PR 表記は、楽天市場のリンクがあれば記事ページに自動で付く（`fetch_and_build.py`）。消したり、本文から広告であることをぼかしたりしない。
+- ニュースの本文を写していないか（タイトル・リンク・短い要約だけ）。
+
+## 7. 公開してテストする
+- `公開` を実行する（商品の欄の未記入や【要確認】が残っていると止まる。止まったら理由を直す）。公開すると `draft: true` が消え、`date` が今日になる。
+- `python -m pytest` を通す。
+- サイトへの反映は、`main` へのプッシュで GitHub Actions がページを作り直して行う。**プッシュはユーザーに確かめてから**。
+- 公開後の X の告知文の案は `data/x_posts/<slug>.json` にある（あればユーザーに見せる）。
+
+## 8. ユーザーに伝える
+- 入れた商品と価格、確かめた【要確認】と根拠の URL、直した・消した文、空のまま消えた欄。
+- コミットメッセージは `feat(articles): 「<タイトル>」を公開` のように書く。
