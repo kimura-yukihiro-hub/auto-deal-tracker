@@ -1,0 +1,10 @@
+# morning-trigger（Cloudflare Workers）。反映は、このフォルダーで npx wrangler@4 deploy
+name = "morning-trigger"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+preview_urls = false  # プレビュー用の URL も名前入りになるので作らない
+
+[triggers]
+# UTC。worker.js の JOBS と同じにする（17 20 = 日本時間 5:17 の note、40 21 = 6:40 のセールの見張り番）
+crons = ["17 20 * * *", "40 21 * * *"]

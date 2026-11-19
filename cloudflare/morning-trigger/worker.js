@@ -1,23 +1,28 @@
-// 毎朝のサイト更新を、Cloudflare Workers の Cron Triggers から開始する Worker。
+// 毎朝の GitHub Actions を、Cloudflare Workers の Cron Triggers から開始する Worker。
 //
-// GitHub Actions の schedule は混雑時に数時間遅れることがあるため、
+// GitHub Actions の schedule は混雑時に数時間遅れたり、実行されなかったりするため
+// （note-auto-writer は 2026-11-17〜19 に一度も schedule で動かなかった）、
 // 時刻に正確な Cloudflare から workflow_dispatch（手動実行と同じ扱い）で起動する。
-// GitHub 側の schedule は予備として残している（同時実行は concurrency で順番待ちになる）。
+// 各リポジトリの schedule は予備として残している（同時実行は concurrency で順番待ち、note は 1 日の本数に上限あり）。
 //
-// Cloudflare ダッシュボードでの設定:
-//   - シークレット GITHUB_TOKEN: このリポジトリだけを対象にした fine-grained トークン
+// Cloudflare の設定:
+//   - シークレット GITHUB_TOKEN: auto-deal-tracker と note-auto-writer を対象にした fine-grained トークン
 //     （権限は Actions: Read and write のみ）
-//   - Cron Trigger: 40 21 * * *（UTC。日本時間 毎日 6:40）
+//   - Cron Triggers: wrangler.toml の [triggers]（UTC）。下の JOBS と同じ時刻にする
 //
-// このファイルはリポジトリでの管理用。実際に動くのは Cloudflare に貼り付けたコード。
+// 反映: このフォルダーで `npx wrangler@4 deploy`（シークレットはそのまま残る）
 
 const OWNER = "kimura-yukihiro-hub";
-const REPO = "auto-deal-tracker";
-const WORKFLOW = "update.yml";
 
-async function dispatch(env) {
+// Cron の式（UTC）ごとに、起動するワークフロー
+const JOBS = {
+  "17 20 * * *": { repo: "note-auto-writer", workflow: "daily.yml", label: "note の毎日の記事（日本時間 5:17）" },
+  "40 21 * * *": { repo: "auto-deal-tracker", workflow: "update.yml", label: "セールの見張り番のサイト更新（日本時間 6:40）" },
+};
+
+async function dispatch(env, job) {
   const res = await fetch(
-    `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,
+    `https://api.github.com/repos/${OWNER}/${job.repo}/actions/workflows/${job.workflow}/dispatches`,
     {
       method: "POST",
       headers: {
@@ -31,20 +36,25 @@ async function dispatch(env) {
     },
   );
   if (res.status !== 204) {
-    // Cloudflare の「ログ」に残る。トークンの期限切れ・権限不足のときはここに出る
-    throw new Error(`GitHub への実行依頼に失敗しました: HTTP ${res.status} ${await res.text()}`);
+    // Cloudflare の「ログ」に残る。トークンの期限切れ・権限不足（403）のときはここに出る
+    throw new Error(`${job.label} の実行依頼に失敗しました: HTTP ${res.status} ${await res.text()}`);
   }
-  console.log("GitHub Actions の実行を依頼しました");
+  console.log(`${job.label} の実行を依頼しました`);
 }
 
 export default {
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(dispatch(env));
+    const job = JOBS[event.cron];
+    if (!job) {
+      console.log(`対応するワークフローがない Cron です: ${event.cron}`);
+      return;
+    }
+    ctx.waitUntil(dispatch(env, job));
   },
 
   // URL を開かれても実行はしない（誰でも何度も起動できてしまうのを防ぐ）
   async fetch() {
-    return new Response("morning-trigger: 毎朝 6:40（日本時間）にサイト更新を開始します。\n", {
+    return new Response("morning-trigger: 毎朝決まった時刻に GitHub Actions を開始します。\n", {
       headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   },

@@ -22,3 +22,4 @@ env/
 Thumbs.db
 
 # Build output: dist/ は Cloudflare Pages の公開対象なのでコミットする（index.html / robots.txt / sitemap.xml / ogp.png）
+.wrangler/
