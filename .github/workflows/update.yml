@@ -20,6 +20,7 @@ on:
       - "fetch_and_build.py" # 生成処理を変更したらすぐ反映する
       - "notify_indexnow.py"
       - "articles.py"
+      - "og_image.py"
       - "affiliate.py"
       - "digest.py"
       - "ai_draft.py"
@@ -61,6 +62,13 @@ jobs:
       # テストに失敗したら、ここで止まりサイトは更新しない（壊れたページを公開しない）
       - name: Run tests
         run: python -m pytest
+
+      - name: Install Japanese font (only when a new article needs an SNS image)
+        continue-on-error: true # フォントがなくても、サイト共通の画像のまま更新する
+        run: |
+          if python -c "import sys, fetch_and_build as f; sys.exit(0 if f.og_images_needed() else 1)"; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq fonts-noto-cjk
+          fi
 
       - name: Fetch feeds and build
         env:

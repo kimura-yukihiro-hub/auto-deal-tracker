@@ -1143,7 +1143,7 @@ def render_article_section(articles: list[Article]) -> str:
     cards = "".join(render_article_card(a) for a in articles[:TOP_ARTICLE_COUNT])
     more = '<p class="more-link"><a href="/articles/">記事一覧へ →</a></p>' if len(articles) > TOP_ARTICLE_COUNT else ""
     return f"""
-    <section class="articles" aria-labelledby="articles-title">
+    <section class="articles" id="articles" aria-labelledby="articles-title">
       <h2 class="section-title" id="articles-title">編集部の記事</h2>
       <div class="article-cards">{cards}
       </div>{more}
@@ -1177,7 +1177,8 @@ def render_page(
     sale_section = render_sale_section(items, picked_links)
     news_heading = '\n    <h2 class="section-title" id="news">最新ニュース</h2>'
     about_html = e(SITE_ABOUT).replace(e(SITE_TITLE), "<strong>" + e(SITE_TITLE) + "</strong>", 1)
-    nav_links = ([('#sale', 'セール速報')] if sale_section else []) + [("#news", "ニュース"), ("/articles/", "記事一覧")]
+    # 自分で書いた記事（選び方・比較）がサイトの中心なので、ナビの先頭に置く（SEO の点検 2026-11-19）
+    nav_links = ([("#articles", "選び方の記事")] if articles else []) + ([('#sale', 'セール速報')] if sale_section else []) + [("#news", "ニュース"), ("/articles/", "記事一覧")]
     top_nav = "".join(f'<a href="{href}">{label}</a>' for href, label in nav_links)
     header_html = f"""
   <header>
@@ -1189,7 +1190,7 @@ def render_page(
       <div class="meta">最終更新: {now} (JST) ・ {len(items)} 件</div>
     </div>
   </header>"""
-    main_html = f"""{render_picks(picks or [])}{render_article_section(articles)}{sale_section}{render_rankings(rankings or [])}{news_heading}
+    main_html = f"""{render_article_section(articles)}{render_picks(picks or [])}{sale_section}{render_rankings(rankings or [])}{news_heading}
     <nav class="filters" aria-label="カテゴリ絞り込み">{filter_buttons}</nav>
     <section class="grid" aria-labelledby="news">{cards}
     </section>
@@ -1314,6 +1315,47 @@ def render_not_found_page() -> str:
     return page.replace("<head>\n", '<head>\n  <meta name="robots" content="noindex">\n', 1)
 
 
+OG_DIR = BASE_DIR / "dist" / "og"  # 記事ごとの SNS 用画像（dist/og/<slug>.png）。題が変わったら作り直す
+OG_TAGLINE = "スマホ・パソコン・家電の選び方とセール情報"
+
+
+def _og_titles() -> dict:
+    try:
+        return json.loads((OG_DIR / "titles.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def og_images_needed(articles: list[Article] | None = None) -> bool:
+    """作る（作り直す）画像があるか。GitHub Actions で、日本語フォントを入れるかを決めるのに使う。"""
+    articles = load_articles(ARTICLES_DIR) if articles is None else articles
+    done = _og_titles()
+    return any(not a.image and (done.get(a.slug) != a.title or not (OG_DIR / f"{a.slug}.png").exists()) for a in articles)
+
+
+def ensure_og_images(articles: list[Article]) -> None:
+    """記事ごとの SNS 用画像を用意し、a.image に入れる。作れないとき（フォントがないなど）はサイト共通の画像のまま。"""
+    from og_image import make_card
+    done = _og_titles()
+    keep = set()
+    for a in articles:
+        if a.image:
+            continue
+        out = OG_DIR / f"{a.slug}.png"
+        if done.get(a.slug) != a.title or not out.exists():
+            if make_card(a.title, SITE_TITLE, OG_TAGLINE, out):
+                done[a.slug] = a.title
+        if out.exists() and done.get(a.slug) == a.title:
+            a.image = f"/og/{a.slug}.png"
+            keep.add(a.slug)
+    for p in OG_DIR.glob("*.png") if OG_DIR.exists() else []:   # 消した記事の画像は消す
+        if p.stem not in keep:
+            p.unlink()
+    if keep:
+        OG_DIR.mkdir(parents=True, exist_ok=True)
+        (OG_DIR / "titles.json").write_text(json.dumps({k: v for k, v in done.items() if k in keep}, ensure_ascii=False, indent=1) + chr(10), encoding="utf-8")
+
+
 def write_article_pages(articles: list[Article]) -> None:
     """dist/articles/ を作り直し、記事一覧と各記事のページを出力する（削除した記事はページも消える）。"""
     out = OUTPUT_PATH.parent / "articles"
@@ -1418,6 +1460,7 @@ def main() -> int:
         deals_log, picks, ARTICLES_DIR, today, force=os.environ.get("FORCE_WEEKLY_DIGEST") == "1"
     )
     articles = load_articles(ARTICLES_DIR, urlparse(SITE_URL).hostname or "")
+    ensure_og_images(articles)
     for unfinished in find_unfinished_articles(articles):
         gh_annotate("warning", "記事の書き残し", unfinished)
         print(f"[WARN] {unfinished}", file=sys.stderr)
