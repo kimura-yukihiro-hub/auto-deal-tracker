@@ -24,6 +24,13 @@ SALE_KEYWORDS = re.compile(
 # 例:「Netflixが値上げ 最安の広告つきプランは…」「国内線タイムセール初日に予約システムで障害」
 # 「セールスフォース」「トランプコイン、史上最安値を記録」
 NOT_SALE_KEYWORDS = re.compile(r"値上げ(?!前)|障害|セールス|暗号資産|仮想通貨|ビットコイン|コイン、|ミームコイン|株価")
+# サイトの対象（スマホ・パソコン・家電）から外れる商品のセール。
+# PC Watch の「本日みつけたお買い得品」には食品・飲料も混ざるため、セール速報・週刊まとめに入れない。
+# 「食卓」「食洗機」に当たらないよう、「食」だけの語は使わない（「1食約203円」のような数字＋食は対象）
+OFF_TOPIC_KEYWORDS = re.compile(
+    r"ポッキー|キットカット|チョコ|菓子|炭酸水|ジュース|飲料水?|ラーメン|カップ麺|どん兵衛|焼そば|牛めし|カレー|\d+食|"
+    r"お米|ビール|コーヒー豆|レザー.{0,8}バッグ|ショルダーバッグ|トートバッグ|財布"
+)
 LOG_RETENTION_DAYS = 21
 DIGEST_WEEKDAY = 6  # 日曜日（月曜=0）
 DIGEST_DAYS = 7
@@ -34,7 +41,11 @@ WEEKDAYS_JA = "月火水木金土日"
 
 
 def is_sale_title(title: str) -> bool:
-    return bool(SALE_KEYWORDS.search(title)) and not NOT_SALE_KEYWORDS.search(title)
+    return (
+        bool(SALE_KEYWORDS.search(title))
+        and not NOT_SALE_KEYWORDS.search(title)
+        and not OFF_TOPIC_KEYWORDS.search(title)
+    )
 
 
 def _load_log(path: Path) -> list[dict]:
