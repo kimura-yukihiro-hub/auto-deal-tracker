@@ -5,8 +5,15 @@
     <link>https://auto-deal-tracker.pages.dev/</link>
     <description>スマホ・パソコン・家電のセールと、買い物に役立つ最新ニュースを毎朝チェック</description>
     <language>ja</language>
-    <lastBuildDate>Wed, 18 Nov 2026 07:00:00 +0900</lastBuildDate>
+    <lastBuildDate>Thu, 19 Nov 2026 07:00:00 +0900</lastBuildDate>
     <atom:link href="https://auto-deal-tracker.pages.dev/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>ロボットとスティック掃除機どっち？｜掃除の手間で比べた結論</title>
+      <link>https://auto-deal-tracker.pages.dev/articles/robot-vs-stick-vacuum/</link>
+      <guid isPermaLink="true">https://auto-deal-tracker.pages.dev/articles/robot-vs-stick-vacuum/</guid>
+      <pubDate>Thu, 19 Nov 2026 07:00:00 +0900</pubDate>
+      <description>ロボット掃除機とコードレススティック掃除機、どちらを選ぶべきか悩む人向けに比較解説。生活スタイルや部屋の環境に合わせた選び方のポイント、それぞれのメリット・デメリットがひと目でわかります。</description>
+    </item>
     <item>
       <title>作業が進むPCモニターの選び方｜用途別のおすすめ</title>
       <link>https://auto-deal-tracker.pages.dev/articles/pc-monitor-guide/</link>
