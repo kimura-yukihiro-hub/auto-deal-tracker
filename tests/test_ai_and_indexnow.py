@@ -208,3 +208,11 @@ def test_mechanical_checks_flags_many_people_opening():
     body = _good_body().replace("そのイヤホン、通勤ではうるさすぎるかもしれません。", "どちらを買うべきか迷う人は多いです。")
     problems = " ".join(ai_draft.mechanical_checks({"title": "イヤホンの選び方｜通勤別のおすすめ", "body": body}))
     assert "ありきたり" in problems
+
+
+def test_ai_phrases_found_outside_code():
+    from ai_phrases import ai_phrase_problem, found_ai_phrases
+    body = "この点を言語化する。総じて便利だ。\n```\n深掘りする\n```\n`包括的`"
+    assert found_ai_phrases(body) == ["言語化する", "総じて"]
+    assert "「言語化する」" in ai_phrase_problem(body)
+    assert ai_phrase_problem("ふつうの文です。") is None

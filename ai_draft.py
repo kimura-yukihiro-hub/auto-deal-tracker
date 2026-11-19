@@ -34,6 +34,9 @@ from pathlib import Path
 
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from ai_phrases import ai_phrase_problem  # noqa: E402  AI によく出る言い回し（natural-japanese の一覧）
+
 BASE_DIR = Path(__file__).resolve().parent
 ARTICLES_DIR = BASE_DIR / "articles"
 DEALS_LOG_PATH = BASE_DIR / "data" / "deals_log.json"
@@ -470,6 +473,9 @@ def mechanical_checks(data: dict) -> list[str]:
     noisy = [h for h in re.findall(r"(?m)^#{2,3}\s*(.+)$", body) if "【" in h or len(h) > 40]
     if noisy:
         problems.append("見出しを短くし、【要確認】や注記は本文に移す: " + " / ".join(f"「{h[:30]}…」" for h in noisy[:3]))
+    phrase = ai_phrase_problem(body)
+    if phrase:
+        problems.append(phrase)
     return problems
 
 
