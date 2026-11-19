@@ -20,6 +20,10 @@ SALE_KEYWORDS = re.compile(
     r"セール|(?<![A-Za-z])(?:SALE|Sale)(?![a-z])|値下げ|値下がり|値引き|割引|特価|特売|最安|お買い得|安売り|激安|円引き|円を切る|"
     r"\d+\s*[%％]\s*(?:OFF|off|オフ)|\d+\s*割引|オフで|ポイント\d+倍|クーポン|タイムセール|ブラックフライデー|プライムデー"
 )
+# 上の語を含んでも、セールではないニュースによく出る語（値上げ・障害・企業名・暗号資産など）。
+# 例:「Netflixが値上げ 最安の広告つきプランは…」「国内線タイムセール初日に予約システムで障害」
+# 「セールスフォース」「トランプコイン、史上最安値を記録」
+NOT_SALE_KEYWORDS = re.compile(r"値上げ(?!前)|障害|セールス|暗号資産|仮想通貨|ビットコイン|コイン、|ミームコイン|株価")
 LOG_RETENTION_DAYS = 21
 DIGEST_WEEKDAY = 6  # 日曜日（月曜=0）
 DIGEST_DAYS = 7
@@ -30,7 +34,7 @@ WEEKDAYS_JA = "月火水木金土日"
 
 
 def is_sale_title(title: str) -> bool:
-    return bool(SALE_KEYWORDS.search(title))
+    return bool(SALE_KEYWORDS.search(title)) and not NOT_SALE_KEYWORDS.search(title)
 
 
 def _load_log(path: Path) -> list[dict]:

@@ -48,6 +48,11 @@ def test_moshimo_link_format():
         ("3日間限定で全文無料公開", False),
         ("Salesforceが新AIを発表", False),
         ("Sales部門を再編", False),
+        ("Netflixが値上げ 最安の広告つきプランは月額990円", False),
+        ("トランプコイン、史上最安値を記録。今後もかなり厳しそう", False),
+        ("ANA、予約システムの一部に障害……国内線タイムセール初日に", False),
+        ("セールスフォース・ジャパンが新サービス", False),
+        ("値上げ前に買いたい！SSDがセールで20％オフ", True),
     ],
 )
 def test_is_sale_title(title, expected):
