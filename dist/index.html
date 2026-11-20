@@ -53,6 +53,54 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+/* ===== 黄色の帯と「今日の見張り報告」（2026-11 の作り直し） =====
+   黄色はサイトの顔（帯）にだけ使い、値引きは赤い値札で見せる。ほかは落ち着いた色のまま。 */
+header.band { background: #ffd83d; color: #1c1a17; border-bottom: 3px solid #1c1a17; padding: 12px 0; }
+header.band .container { display: flex; align-items: center; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; }
+header.band h1 { font-size: clamp(1.25rem, 3.6vw, 1.6rem); font-weight: 900; letter-spacing: .03em; }
+header.band .top-nav { margin: 0; justify-content: flex-start; }
+header.band .top-nav a { color: #1c1a17; font-weight: 700; display: inline-flex; align-items: center; min-height: 32px; }
+header.band .top-nav a:hover { color: #1c1a17; }
+.report { margin: 16px 0 28px; display: grid; gap: 12px; }
+.report-card { background: var(--surface); border-radius: 10px; padding: 18px 18px 6px; box-shadow: var(--shadow); max-width: 820px; }
+.report-card h2 { margin: 0; font-size: 1.5rem; font-weight: 900; }
+.report-date { margin: 2px 0 0; font-size: .8rem; font-weight: 700; color: var(--muted); }
+.report .lead { margin: 10px 0 4px; font-size: .98rem; line-height: 1.75; }
+.report .lead b { background: linear-gradient(transparent 58%, rgba(255, 216, 61, .6) 58%); }
+.report-note { margin: 0 0 8px; font-size: .75rem; color: var(--muted); }
+.top-sales { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--text); }
+.top-sales li { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: start; }
+.top-sales li:last-child { border-bottom: 0; }
+.top-sales h3 { margin: 0; font-size: .98rem; line-height: 1.5; overflow-wrap: anywhere; }
+.top-sales h3 a { color: var(--text); text-decoration: none; }
+.top-sales h3 a:hover { color: var(--accent); text-decoration: underline; }
+.top-sales .src { font-size: .75rem; color: var(--muted); }
+.badge { display: grid; justify-items: center; background: #c9301e; color: #fff; border-radius: 6px; padding: 6px 2px; line-height: 1.15; font-weight: 900; text-align: center; }
+.badge b { font-size: 1.15rem; white-space: nowrap; }
+.badge small { font-size: .65rem; font-weight: 800; }
+.badge small:empty { display: none; }
+.badge.plain { background: var(--tag-deal); color: var(--tag-deal-text); }
+.badge.plain b { font-size: .9rem; }
+.soon { background: #1c1a17; color: #fff; border-radius: 12px; padding: 12px 16px; max-width: 820px; }
+.soon h2 { margin: 0 0 4px; font-size: 1rem; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.soon h2 small { font-size: .72rem; font-weight: 600; color: #cfc9bc; }
+.soon ul { list-style: none; margin: 0; padding: 0; }
+.soon li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid #3a3731; font-size: .9rem; }
+.soon a { color: #fff; text-decoration: none; overflow-wrap: anywhere; }
+.soon a:hover { text-decoration: underline; }
+.soon b { color: #ffd83d; white-space: nowrap; }
+.entry { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 820px; }
+.entry a { display: grid; justify-items: center; gap: 2px; background: var(--surface); color: var(--text); border: 2px solid var(--text); border-radius: 12px; padding: 12px 8px; font-weight: 800; text-decoration: none; min-height: 44px; }
+.entry a small { font-weight: 600; font-size: .75rem; color: var(--muted); }
+.entry a:hover { background: var(--bg); }
+.site-about { margin: 8px 0 40px; padding-top: 20px; border-top: 1px solid var(--border); }
+.site-about .tagline { margin: 0 0 4px; color: var(--muted); }
+#report, #articles { scroll-margin-top: 12px; }
+/* ダークモードでは、明るい青の上の白い文字が読みにくいので、文字を濃い色にする */
+@media (prefers-color-scheme: dark) {
+  .filters button[aria-pressed="true"], .card .btn, footer a.contact-btn { color: #0b1320 !important; }
+  .pick-label { color: #ff8a7a !important; }
+}
 body {
   margin: 0; background: var(--bg); color: var(--text); line-height: 1.6;
   font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
@@ -93,7 +141,7 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .sale-item p { margin: 0; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
 .more-wrap { text-align: center; margin: -16px 0 40px; }
 .sale-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 12px 0 0; }
-.more-link-inline { color: var(--accent); font-size: .9rem; }
+.more-link-inline { color: var(--accent); font-size: .9rem; display: inline-flex; align-items: center; min-height: 32px; }
 .share { display: flex; flex-wrap: wrap; gap: 8px; }
 .share-btn {
   display: inline-flex; align-items: center; padding: 7px 14px; border-radius: 999px;
@@ -292,16 +340,34 @@ footer a { color: var(--accent); }
 </style>
 </head>
 <body>
-  <header>
+  <header class="band">
     <div class="container">
-      <nav class="top-nav" aria-label="サイト内"><a href="#articles">選び方の記事</a><a href="#sale">セール速報</a><a href="#news">ニュース</a><a href="/articles/">記事一覧</a></nav>
       <h1>セールの見張り番</h1>
-      <p>スマホ・パソコン・家電のセールと、買い物に役立つ最新ニュースを毎朝チェック</p>
-      <div class="about" role="note" aria-label="サイト概要"><strong>セールの見張り番</strong> は、スマホ・パソコン・家電を少しでもお得に買いたい人のために、主要IT・家電メディアのセール情報と買い物に役立つニュースを毎朝自動で集め、編集部のおすすめとあわせてお届けするサイトです。</div>
-      <div class="meta">最終更新: 2026年11月20日 12:58 (JST) ・ 40 件</div>
+      <nav class="top-nav" aria-label="サイト内"><a href="#articles">選び方の記事</a><a href="#sale">セール速報</a><a href="#news">ニュース</a><a href="/articles/">記事一覧</a></nav>
     </div>
   </header>
   <main class="container">
+    <section class="report" id="report" aria-labelledby="report-title">
+      <div class="report-card">
+        <h2 id="report-title">今日の見張り報告</h2>
+        <p class="report-date">2026年11月20日 17:25 時点</p>
+        <p class="lead">見張っているニュース 40件のうち、セールは <b>10件</b>（今日見つかったもの 7件）でした。</p>
+        <p class="report-note">値引きの大きい順（見出しに書かれた値引き率・金額で比べています。価格は掲載時点のものです）</p>
+        <ul class="top-sales">
+        <li><span class="badge"><small>最大</small><b>43%</b><small>オフ</small></span><div><h3><a href="https://pc.watch.impress.co.jp/docs/news/2158100.html" target="_blank" rel="noopener">ポータブルゲーミングPCやUMPCなどが最大43%オフ。天空のBLACK FRIDAY</a></h3><span class="src">PC Watch</span></div></li>
+        <li><span class="badge"><small></small><b>26%</b><small>オフ</small></span><div><h3><a href="https://getnavi.jp/appliances/1121627/" target="_blank" rel="noopener">最長180日間のロングバッテリー！ エペイオスの電動歯ブラシが26％オフ</a></h3><span class="src">GetNavi web</span></div></li>
+        <li><span class="badge"><small></small><b>24%</b><small>オフ</small></span><div><h3><a href="https://getnavi.jp/appliances/1120786/" target="_blank" rel="noopener">24％オフ！氷の上を滑るような操作感のバルミューダ「The Cleaner Lite」がお買い得</a></h3><span class="src">GetNavi web</span></div></li>
+        </ul>
+      </div>
+      <div class="soon">
+        <h2>もうすぐ終わるセール<small>記事に期限が書かれているものだけ</small></h2>
+        <ul><li><a href="https://pc.watch.impress.co.jp/docs/news/2158100.html" target="_blank" rel="noopener">ポータブルゲーミングPCやUMPCなどが最大43%オフ。天空のBLACK FRIDAY</a><b>11/30まで</b></li><li><a href="https://www.gizmodo.jp/article/2611-xiaomi-clip-earcuff-earphones/" target="_blank" rel="noopener">先行セール中！ Xiaomi初のイヤーカフ型イヤホン。まるでアクセサリーなデザインに、録音機能もついてくる</a><b>12/7まで</b></li><li><a href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2158192.html" target="_blank" rel="noopener">【本日みつけたお買い得品】AIスマートグラスのオマケつく。ACEMAGICブラックフライデーでミニPCセール中</a><b>12/8まで</b></li></ul>
+      </div>
+      <div class="entry">
+        <a href="#sale">セールをすべて見る<small>10件</small></a>
+        <a href="#articles">選び方の記事<small>編集部が解説</small></a>
+      </div>
+    </section>
     <section class="articles" id="articles" aria-labelledby="articles-title">
       <h2 class="section-title" id="articles-title">編集部の記事</h2>
       <div class="article-cards">
@@ -388,16 +454,16 @@ footer a { color: var(--accent); }
       <p class="section-note">各メディアの最新ニュースのうち、セール・値下げ・割引に関するものを自動で表示しています。価格は掲載時点のものです。</p>
       <div class="sale-items">
         <article class="sale-item">
+          <div class="sale-meta"><span class="tag deal">セール</span><span>PC Watch</span><time>今日 16:28</time></div>
+          <h3><a href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2158192.html" target="_blank" rel="noopener">【本日みつけたお買い得品】AIスマートグラスのオマケつく。ACEMAGICブラックフライデーでミニPCセール中</a></h3>
+        </article>
+        <article class="sale-item">
+          <div class="sale-meta"><span class="tag deal">セール</span><span>ギズモード・ジャパン</span><time>今日 15:00</time></div>
+          <h3><a href="https://www.gizmodo.jp/article/2611-xiaomi-clip-earcuff-earphones/" target="_blank" rel="noopener">先行セール中！ Xiaomi初のイヤーカフ型イヤホン。まるでアクセサリーなデザインに、録音機能もついてくる</a></h3>
+        </article>
+        <article class="sale-item">
           <div class="sale-meta"><span class="tag deal">セール</span><span>PC Watch</span><time>今日 12:04</time></div>
           <h3><a href="https://pc.watch.impress.co.jp/docs/news/2158129.html" target="_blank" rel="noopener">NANDフラッシュ、ついに値下がりへ。2027年第1四半期に最大-5%の予測</a></h3>
-        </article>
-        <article class="sale-item">
-          <div class="sale-meta"><span class="tag deal">セール</span><span>PC Watch</span><time>今日 11:33</time></div>
-          <h3><a href="https://pc.watch.impress.co.jp/docs/news/2158100.html" target="_blank" rel="noopener">ポータブルゲーミングPCやUMPCなどが最大43%オフ。天空のBLACK FRIDAY</a></h3>
-        </article>
-        <article class="sale-item">
-          <div class="sale-meta"><span class="tag deal">セール</span><span>ギズモード・ジャパン</span><time>今日 11:05</time></div>
-          <h3><a href="https://www.gizmodo.jp/article/2611-grapht-sale-gaming-monitor/" target="_blank" rel="noopener">ゲーミングモニターが2万円台前半に。GRAPHTの最大50%オフセールでゲーム周りを強化</a></h3>
         </article>
         <article class="sale-item">
           <div class="sale-meta"><span class="tag deal">セール</span><span>PC Watch</span><time>今日 10:39</time></div>
@@ -413,13 +479,139 @@ footer a { color: var(--accent); }
         </article>
       </div>
       <div class="sale-footer">
-        <a class="share-btn share-x" href="https://twitter.com/intent/tweet?text=%E3%80%90%E4%BB%8A%E6%97%A5%E3%81%AE%E3%82%BB%E3%83%BC%E3%83%AB%E9%80%9F%E5%A0%B1%E3%80%91%0A%E3%83%BBNAND%E3%83%95%E3%83%A9%E3%83%83%E3%82%B7%E3%83%A5%E3%80%81%E3%81%A4%E3%81%84%E3%81%AB%E5%80%A4%E4%B8%8B%E3%81%8C%E3%82%8A%E3%81%B8%E3%80%822027%E5%B9%B4%E7%AC%AC1%E5%9B%9B%E5%8D%8A%E6%9C%9F%E3%81%AB%E6%9C%80%E5%A4%A7-5%25%E3%81%AE%E4%BA%88%E6%B8%AC%0A%E3%83%BB%E3%83%9D%E3%83%BC%E3%82%BF%E3%83%96%E3%83%AB%E3%82%B2%E3%83%BC%E3%83%9F%E3%83%B3%E3%82%B0PC%E3%82%84UMPC%E3%81%AA%E3%81%A9%E3%81%8C%E6%9C%80%E5%A4%A743%25%E3%82%AA%E3%83%95%E3%80%82%E5%A4%A9%E7%A9%BA%E3%81%AEBLACK%20FR%E2%80%A6%0A%E3%83%BB%E3%82%B2%E3%83%BC%E3%83%9F%E3%83%B3%E3%82%B0%E3%83%A2%E3%83%8B%E3%82%BF%E3%83%BC%E3%81%8C2%E4%B8%87%E5%86%86%E5%8F%B0%E5%89%8D%E5%8D%8A%E3%81%AB%E3%80%82GRAPHT%E3%81%AE%E6%9C%80%E5%A4%A750%25%E3%82%AA%E3%83%95%E3%82%BB%E3%83%BC%E3%83%AB%E3%81%A7%E3%82%B2%E3%83%BC%E3%83%A0%E2%80%A6%0A%23%E3%82%BB%E3%83%BC%E3%83%AB%20%23%E3%81%8A%E8%B2%B7%E3%81%84%E5%BE%97&amp;url=https%3A%2F%2Fauto-deal-tracker.pages.dev%2F" target="_blank" rel="noopener">今日のセール速報を X でポスト</a>
-        <a class="more-link-inline" href="#news" data-show-filter="セール">セールのニュースをすべて見る（12 件）→</a>
+        <a class="share-btn share-x" href="https://twitter.com/intent/tweet?text=%E3%80%90%E4%BB%8A%E6%97%A5%E3%81%AE%E3%82%BB%E3%83%BC%E3%83%AB%E9%80%9F%E5%A0%B1%E3%80%91%0A%E3%83%BBAI%E3%82%B9%E3%83%9E%E3%83%BC%E3%83%88%E3%82%B0%E3%83%A9%E3%82%B9%E3%81%AE%E3%82%AA%E3%83%9E%E3%82%B1%E3%81%A4%E3%81%8F%E3%80%82ACEMAGIC%E3%83%96%E3%83%A9%E3%83%83%E3%82%AF%E3%83%95%E3%83%A9%E3%82%A4%E3%83%87%E3%83%BC%E3%81%A7%E3%83%9F%E3%83%8BPC%E3%82%BB%E2%80%A6%0A%E3%83%BB%E5%85%88%E8%A1%8C%E3%82%BB%E3%83%BC%E3%83%AB%E4%B8%AD%EF%BC%81%20Xiaomi%E5%88%9D%E3%81%AE%E3%82%A4%E3%83%A4%E3%83%BC%E3%82%AB%E3%83%95%E5%9E%8B%E3%82%A4%E3%83%A4%E3%83%9B%E3%83%B3%E3%80%82%E3%81%BE%E3%82%8B%E3%81%A7%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B5%E3%83%AA%E3%83%BC%E3%81%AA%E3%83%87%E3%82%B6%E2%80%A6%0A%E3%83%BBNAND%E3%83%95%E3%83%A9%E3%83%83%E3%82%B7%E3%83%A5%E3%80%81%E3%81%A4%E3%81%84%E3%81%AB%E5%80%A4%E4%B8%8B%E3%81%8C%E3%82%8A%E3%81%B8%E3%80%822027%E5%B9%B4%E7%AC%AC1%E5%9B%9B%E5%8D%8A%E6%9C%9F%E3%81%AB%E6%9C%80%E5%A4%A7-5%25%E3%81%AE%E4%BA%88%E6%B8%AC%0A%23%E3%82%BB%E3%83%BC%E3%83%AB%20%23%E3%81%8A%E8%B2%B7%E3%81%84%E5%BE%97&amp;url=https%3A%2F%2Fauto-deal-tracker.pages.dev%2F" target="_blank" rel="noopener">今日のセール速報を X でポスト</a>
+        <a class="more-link-inline" href="#news" data-show-filter="セール">セールのニュースをすべて見る（10 件）→</a>
       </div>
     </section>
     <h2 class="section-title" id="news">最新ニュース</h2>
-    <nav class="filters" aria-label="カテゴリ絞り込み"><button type="button" data-filter="all" aria-pressed="true">すべて <span class="count">40</span></button><button type="button" data-filter="セール" aria-pressed="false">セール <span class="count">12</span></button><button type="button" data-filter="製品ニュース" aria-pressed="false">製品ニュース <span class="count">20</span></button><button type="button" data-filter="IT・ネット" aria-pressed="false">IT・ネット <span class="count">8</span></button></nav>
+    <nav class="filters" aria-label="カテゴリ絞り込み"><button type="button" data-filter="all" aria-pressed="true">すべて <span class="count">40</span></button><button type="button" data-filter="セール" aria-pressed="false">セール <span class="count">10</span></button><button type="button" data-filter="製品ニュース" aria-pressed="false">製品ニュース <span class="count">22</span></button><button type="button" data-filter="IT・ネット" aria-pressed="false">IT・ネット <span class="count">8</span></button></nav>
     <section class="grid" aria-labelledby="news">
+      <article class="card" data-category="製品ニュース">
+        <div class="card-head">
+          <span class="tag">製品ニュース</span>
+          <span>ギズモード・ジャパン</span>
+          <time datetime="2026-11-20T17:00:00+09:00">2026/11/20 17:00</time>
+        </div>
+        <h3><a href="https://www.gizmodo.jp/article/orimouse_new-colors_and_art-design/" target="_blank" rel="noopener">ホリデーシーズンのプレゼントに。人気の折りたたみマウスの新デザイン</a></h3>
+        <a class="btn" href="https://www.gizmodo.jp/article/orimouse_new-colors_and_art-design/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="製品ニュース">
+        <div class="card-head">
+          <span class="tag">製品ニュース</span>
+          <span>ギズモード・ジャパン</span>
+          <time datetime="2026-11-20T16:35:00+09:00">2026/11/20 16:35</time>
+        </div>
+        <h3><a href="https://www.gizmodo.jp/article/2611-oura-ring-jet-lag-plan/" target="_blank" rel="noopener">Oura Ringに「時差ぼけ対策」新機能、カフェイン摂取のタイミングまで教えてくれる</a></h3>
+        <a class="btn" href="https://www.gizmodo.jp/article/2611-oura-ring-jet-lag-plan/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="IT・ネット">
+        <div class="card-head">
+          <span class="tag">IT・ネット</span>
+          <span>ITmedia NEWS</span>
+          <time datetime="2026-11-20T16:32:08+09:00">2026/11/20 16:32</time>
+        </div>
+        <h3><a href="https://www.itmedia.co.jp/news/article/2611/20/2000003371/" target="_blank" rel="noopener">片山財務相、楽天証券は「顧客の不安解消に、できること全部していただきたい」</a></h3>
+        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/20/2000003371/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="セール">
+        <div class="card-head">
+          <span class="tag deal">セール</span>
+          <span>PC Watch</span>
+          <time datetime="2026-11-20T16:28:31+09:00">2026/11/20 16:28</time>
+        </div>
+        <h3><a href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2158192.html" target="_blank" rel="noopener">【本日みつけたお買い得品】AIスマートグラスのオマケつく。ACEMAGICブラックフライデーでミニPCセール中</a></h3>
+        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2158192.html" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="製品ニュース">
+        <div class="card-head">
+          <span class="tag">製品ニュース</span>
+          <span>ITmedia Mobile</span>
+          <time datetime="2026-11-20T15:46:00+09:00">2026/11/20 15:46</time>
+        </div>
+        <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/20/news059.html" target="_blank" rel="noopener">配線不要の準固体バッテリー内蔵ソーラー充電式ドラレコ「SDR-01」、オートバックスで先行販売 1万9800円</a></h3>
+        <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/20/news059.html" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="IT・ネット">
+        <div class="card-head">
+          <span class="tag">IT・ネット</span>
+          <span>ITmedia NEWS</span>
+          <time datetime="2026-11-20T15:11:05+09:00">2026/11/20 15:11</time>
+        </div>
+        <h3><a href="https://www.itmedia.co.jp/news/article/2611/20/2000003369/" target="_blank" rel="noopener">ドンキのAI社員「近藤あい」が正式デビュー 販促POPや動画で活躍へ 運営元「すでに裏に20人ぐらいいる」</a></h3>
+        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/20/2000003369/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="セール">
+        <div class="card-head">
+          <span class="tag deal">セール</span>
+          <span>ギズモード・ジャパン</span>
+          <time datetime="2026-11-20T15:00:00+09:00">2026/11/20 15:00</time>
+        </div>
+        <h3><a href="https://www.gizmodo.jp/article/2611-xiaomi-clip-earcuff-earphones/" target="_blank" rel="noopener">先行セール中！ Xiaomi初のイヤーカフ型イヤホン。まるでアクセサリーなデザインに、録音機能もついてくる</a></h3>
+        <a class="btn" href="https://www.gizmodo.jp/article/2611-xiaomi-clip-earcuff-earphones/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="製品ニュース">
+        <div class="card-head">
+          <span class="tag">製品ニュース</span>
+          <span>ギズモード・ジャパン</span>
+          <time datetime="2026-11-20T14:35:00+09:00">2026/11/20 14:35</time>
+        </div>
+        <h3><a href="https://www.gizmodo.jp/article/2611-alexa-plus-natural-conversation/" target="_blank" rel="noopener">Amazonの「Alexa+」の進化に驚いた。曖昧なお願いも「意図をくみ取って」先回りしてくれる</a></h3>
+        <a class="btn" href="https://www.gizmodo.jp/article/2611-alexa-plus-natural-conversation/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="製品ニュース">
+        <div class="card-head">
+          <span class="tag">製品ニュース</span>
+          <span>ITmedia Mobile</span>
+          <time datetime="2026-11-20T14:22:00+09:00">2026/11/20 14:22</time>
+        </div>
+        <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/20/news055.html" target="_blank" rel="noopener">光回線サービスの満足度は「eo光」がトップ、利用は「ドコモ光」が最多 MMD研究所調べ</a></h3>
+        <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/20/news055.html" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="製品ニュース">
+        <div class="card-head">
+          <span class="tag">製品ニュース</span>
+          <span>ギズモード・ジャパン</span>
+          <time datetime="2026-11-20T14:00:00+09:00">2026/11/20 14:00</time>
+        </div>
+        <h3><a href="https://www.gizmodo.jp/article/2611-openai-compute-campus-datacenters/" target="_blank" rel="noopener">データセンター改め｢コンピュート・キャンパス｣。OpenAI、呼び方を変えたいらしい</a></h3>
+        <a class="btn" href="https://www.gizmodo.jp/article/2611-openai-compute-campus-datacenters/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="製品ニュース">
+        <div class="card-head">
+          <span class="tag">製品ニュース</span>
+          <span>PC Watch</span>
+          <time datetime="2026-11-20T13:53:24+09:00">2026/11/20 13:53</time>
+        </div>
+        <h3><a href="https://pc.watch.impress.co.jp/docs/news/2158179.html" target="_blank" rel="noopener">Windows 11のロック画面をナレーターで突破できる脆弱性。BitLocker環境も対象</a></h3>
+        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/2158179.html" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="IT・ネット">
+        <div class="card-head">
+          <span class="tag">IT・ネット</span>
+          <span>ITmedia NEWS</span>
+          <time datetime="2026-11-20T13:29:35+09:00">2026/11/20 13:29</time>
+        </div>
+        <h3><a href="https://www.itmedia.co.jp/news/article/2611/20/2000003368/" target="_blank" rel="noopener">Microsoft、AIによるサイバー攻撃にAIエージェントで対抗する新サービス「Microsoft Perception」提供開始</a></h3>
+        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/20/2000003368/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="IT・ネット">
+        <div class="card-head">
+          <span class="tag">IT・ネット</span>
+          <span>ITmedia NEWS</span>
+          <time datetime="2026-11-20T13:05:21+09:00">2026/11/20 13:05</time>
+        </div>
+        <h3><a href="https://www.itmedia.co.jp/news/article/2611/20/2000003367/" target="_blank" rel="noopener">ハンコヤドットコム、カード番号やセキュリティコード8220件漏えいか 決済画面改ざんされる</a></h3>
+        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/20/2000003367/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="製品ニュース">
+        <div class="card-head">
+          <span class="tag">製品ニュース</span>
+          <span>ギズモード・ジャパン</span>
+          <time datetime="2026-11-20T13:00:00+09:00">2026/11/20 13:00</time>
+        </div>
+        <h3><a href="https://www.gizmodo.jp/article/iphone-pro_design_rumors/" target="_blank" rel="noopener">来年のiPhone Proシリーズはデザインが変わる？</a></h3>
+        <a class="btn" href="https://www.gizmodo.jp/article/iphone-pro_design_rumors/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
       <article class="card" data-category="製品ニュース">
         <div class="card-head">
           <span class="tag">製品ニュース</span>
@@ -459,15 +651,6 @@ footer a { color: var(--accent); }
       <article class="card" data-category="製品ニュース">
         <div class="card-head">
           <span class="tag">製品ニュース</span>
-          <span>ギズモード・ジャパン</span>
-          <time datetime="2026-11-20T12:00:00+09:00">2026/11/20 12:00</time>
-        </div>
-        <h3><a href="https://www.gizmodo.jp/article/2611-japan-leaked-passwords-2026-ranking/" target="_blank" rel="noopener">日本の流出パスワード展2026、開催。トップ10を勝手に品評してみよう</a></h3>
-        <a class="btn" href="https://www.gizmodo.jp/article/2611-japan-leaked-passwords-2026-ranking/" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="製品ニュース">
-        <div class="card-head">
-          <span class="tag">製品ニュース</span>
           <span>GetNavi web</span>
           <time datetime="2026-11-20T12:00:00+09:00">2026/11/20 12:00</time>
         </div>
@@ -477,11 +660,11 @@ footer a { color: var(--accent); }
       <article class="card" data-category="製品ニュース">
         <div class="card-head">
           <span class="tag">製品ニュース</span>
-          <span>ギズモード・ジャパン</span>
-          <time datetime="2026-11-20T11:35:00+09:00">2026/11/20 11:35</time>
+          <span>ITmedia Mobile</span>
+          <time datetime="2026-11-20T11:53:00+09:00">2026/11/20 11:53</time>
         </div>
-        <h3><a href="https://www.gizmodo.jp/article/2611-montbell-crima-air-light-fleece/" target="_blank" rel="noopener">モンベルの透けるフリースは102gだから「着るかわからない日」も携帯できる</a></h3>
-        <a class="btn" href="https://www.gizmodo.jp/article/2611-montbell-crima-air-light-fleece/" target="_blank" rel="noopener">元記事を読む →</a>
+        <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/20/news051.html" target="_blank" rel="noopener">Nintendo Switch 2に直接接続 バッテリーレスのモバイルWi-Fi「Switch Direct Link」予約開始</a></h3>
+        <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/20/news051.html" target="_blank" rel="noopener">元記事を読む →</a>
       </article>
       <article class="card" data-category="セール">
         <div class="card-head">
@@ -509,24 +692,6 @@ footer a { color: var(--accent); }
         </div>
         <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/20/news050.html" target="_blank" rel="noopener">「dカード プリペイド」2027年9月30日にサービス終了へ 新規発行は2026年12月20日まで</a></h3>
         <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/20/news050.html" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="セール">
-        <div class="card-head">
-          <span class="tag deal">セール</span>
-          <span>ギズモード・ジャパン</span>
-          <time datetime="2026-11-20T11:05:00+09:00">2026/11/20 11:05</time>
-        </div>
-        <h3><a href="https://www.gizmodo.jp/article/2611-grapht-sale-gaming-monitor/" target="_blank" rel="noopener">ゲーミングモニターが2万円台前半に。GRAPHTの最大50%オフセールでゲーム周りを強化</a></h3>
-        <a class="btn" href="https://www.gizmodo.jp/article/2611-grapht-sale-gaming-monitor/" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="製品ニュース">
-        <div class="card-head">
-          <span class="tag">製品ニュース</span>
-          <span>ギズモード・ジャパン</span>
-          <time datetime="2026-11-20T11:00:00+09:00">2026/11/20 11:00</time>
-        </div>
-        <h3><a href="https://www.gizmodo.jp/article/gizmart-workchair-pro-w930-1st/" target="_blank" rel="noopener">こういうでのいいんだよ。気兼ねなく毎日使えるシンプルワークチェア「Pro-W930」</a></h3>
-        <a class="btn" href="https://www.gizmodo.jp/article/gizmart-workchair-pro-w930-1st/" target="_blank" rel="noopener">元記事を読む →</a>
       </article>
       <article class="card" data-category="製品ニュース">
         <div class="card-head">
@@ -564,33 +729,6 @@ footer a { color: var(--accent); }
         <h3><a href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2158069.html" target="_blank" rel="noopener">【本日みつけたお買い得品】FOSSiBOTのタフネスAndroidスマホが約7千円引き、Amazonセール中</a></h3>
         <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2158069.html" target="_blank" rel="noopener">元記事を読む →</a>
       </article>
-      <article class="card" data-category="セール">
-        <div class="card-head">
-          <span class="tag deal">セール</span>
-          <span>PC Watch</span>
-          <time datetime="2026-11-20T10:23:29+09:00">2026/11/20 10:23</time>
-        </div>
-        <h3><a href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2158067.html" target="_blank" rel="noopener">【本日みつけたお買い得品】Office付き14型ASUSノートが3万円引き！Amazonセール</a></h3>
-        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2158067.html" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="製品ニュース">
-        <div class="card-head">
-          <span class="tag">製品ニュース</span>
-          <span>ギズモード・ジャパン</span>
-          <time datetime="2026-11-20T10:20:00+09:00">2026/11/20 10:20</time>
-        </div>
-        <h3><a href="https://www.gizmodo.jp/article/nape-pro-se-ipad-mini/" target="_blank" rel="noopener">iPad miniをデスクトップPCとして使う。Nape Pro SEとのコンビで快適作業</a></h3>
-        <a class="btn" href="https://www.gizmodo.jp/article/nape-pro-se-ipad-mini/" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="セール">
-        <div class="card-head">
-          <span class="tag deal">セール</span>
-          <span>PC Watch</span>
-          <time datetime="2026-11-20T10:12:01+09:00">2026/11/20 10:12</time>
-        </div>
-        <h3><a href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2158066.html" target="_blank" rel="noopener">【本日みつけたお買い得品】約4万円引き！ASUSの頑強ゲーミングノートがAmazonセール中</a></h3>
-        <a class="btn" href="https://pc.watch.impress.co.jp/docs/news/todays_sales/2158066.html" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
       <article class="card" data-category="製品ニュース">
         <div class="card-head">
           <span class="tag">製品ニュース</span>
@@ -599,15 +737,6 @@ footer a { color: var(--accent); }
         </div>
         <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/20/news035.html" target="_blank" rel="noopener">【ダイソー】330円の屋内向けの「センサーライト」 人を感知して自動で点灯／消灯</a></h3>
         <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/20/news035.html" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="製品ニュース">
-        <div class="card-head">
-          <span class="tag">製品ニュース</span>
-          <span>ギズモード・ジャパン</span>
-          <time datetime="2026-11-20T09:35:00+09:00">2026/11/20 09:35</time>
-        </div>
-        <h3><a href="https://www.gizmodo.jp/article/2611-anthropic-ipo-2-trillion-valuation/" target="_blank" rel="noopener">Anthropic上場。創業者7人、全員が資産約4兆円に</a></h3>
-        <a class="btn" href="https://www.gizmodo.jp/article/2611-anthropic-ipo-2-trillion-valuation/" target="_blank" rel="noopener">元記事を読む →</a>
       </article>
       <article class="card" data-category="IT・ネット">
         <div class="card-head">
@@ -636,33 +765,6 @@ footer a { color: var(--accent); }
         <h3><a href="https://www.itmedia.co.jp/news/article/2611/20/2000003330/" target="_blank" rel="noopener">日本で受け入れられるのか？ ネットにつながらない携帯「INFOBAR ZERO」 KDDIが語った発売の意図</a></h3>
         <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/20/2000003330/" target="_blank" rel="noopener">元記事を読む →</a>
       </article>
-      <article class="card" data-category="IT・ネット">
-        <div class="card-head">
-          <span class="tag">IT・ネット</span>
-          <span>ITmedia NEWS</span>
-          <time datetime="2026-11-20T08:41:04+09:00">2026/11/20 08:41</time>
-        </div>
-        <h3><a href="https://www.itmedia.co.jp/news/article/2611/20/2000003356/" target="_blank" rel="noopener">Mac版「Gemini」にユーザーの代わりにアプリを操作する「computer use」機能追加 まず米国で</a></h3>
-        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/20/2000003356/" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="IT・ネット">
-        <div class="card-head">
-          <span class="tag">IT・ネット</span>
-          <span>ITmedia NEWS</span>
-          <time datetime="2026-11-20T08:17:42+09:00">2026/11/20 08:17</time>
-        </div>
-        <h3><a href="https://www.itmedia.co.jp/news/article/2611/20/2000003355/" target="_blank" rel="noopener">湘南美容クリニックのSBC、162万人分の個人情報流出 パスワードは「暗号化せず保存していた」</a></h3>
-        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/20/2000003355/" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="IT・ネット">
-        <div class="card-head">
-          <span class="tag">IT・ネット</span>
-          <span>ITmedia NEWS</span>
-          <time datetime="2026-11-20T06:38:41+09:00">2026/11/20 06:38</time>
-        </div>
-        <h3><a href="https://www.itmedia.co.jp/news/article/2611/20/2000003354/" target="_blank" rel="noopener">AnthropicがNasdaq上場、IPO調達額は史上最大の813億ドル 初値は公開価格を34％上回る</a></h3>
-        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/20/2000003354/" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
       <article class="card" data-category="製品ニュース">
         <div class="card-head">
           <span class="tag">製品ニュース</span>
@@ -671,15 +773,6 @@ footer a { color: var(--accent); }
         </div>
         <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/19/news057.html" target="_blank" rel="noopener">OPPO、公式ショップと楽天市場で「BLACK FRIDAY」開催 スマートフォンやタブレットがおトクに</a></h3>
         <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/19/news057.html" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="IT・ネット">
-        <div class="card-head">
-          <span class="tag">IT・ネット</span>
-          <span>ITmedia NEWS</span>
-          <time datetime="2026-11-19T20:04:47+09:00">2026/11/19 20:04</time>
-        </div>
-        <h3><a href="https://www.itmedia.co.jp/news/article/2611/19/2000003351/" target="_blank" rel="noopener">美少女ゲーム「NIKKE」経由でマルウェア感染 北海道2自治体、委託先が認める</a></h3>
-        <a class="btn" href="https://www.itmedia.co.jp/news/article/2611/19/2000003351/" target="_blank" rel="noopener">元記事を読む →</a>
       </article>
       <article class="card" data-category="製品ニュース">
         <div class="card-head">
@@ -711,38 +804,11 @@ footer a { color: var(--accent); }
       <article class="card" data-category="製品ニュース">
         <div class="card-head">
           <span class="tag">製品ニュース</span>
-          <span>ITmedia Mobile</span>
-          <time datetime="2026-11-19T18:30:00+09:00">2026/11/19 18:30</time>
-        </div>
-        <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/19/news071.html" target="_blank" rel="noopener">ネットもLINEも非対応の「INFOBAR ZERO」は誰が買う？ 3万2780円の価値や向き合い方を考える</a></h3>
-        <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/19/news071.html" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="製品ニュース">
-        <div class="card-head">
-          <span class="tag">製品ニュース</span>
-          <span>ITmedia Mobile</span>
-          <time datetime="2026-11-19T17:33:00+09:00">2026/11/19 17:33</time>
-        </div>
-        <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/19/news070.html" target="_blank" rel="noopener">ドコモ／ahamo光の「10ギガ」プランが最大12カ月目まで月額2970円に 12月からキャンペーン開催</a></h3>
-        <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/19/news070.html" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="製品ニュース">
-        <div class="card-head">
-          <span class="tag">製品ニュース</span>
           <span>GetNavi web</span>
           <time datetime="2026-11-19T17:00:00+09:00">2026/11/19 17:00</time>
         </div>
         <h3><a href="https://getnavi.jp/appliances/1118792/" target="_blank" rel="noopener">“予約殺到”も納得だ！ モノ好きが唸る「ネスカフェ ゴールドブレンド バリスタ kotone」が提案する3つの体験</a></h3>
         <a class="btn" href="https://getnavi.jp/appliances/1118792/" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
-      <article class="card" data-category="セール">
-        <div class="card-head">
-          <span class="tag deal">セール</span>
-          <span>ITmedia Mobile</span>
-          <time datetime="2026-11-19T15:03:00+09:00">2026/11/19 15:03</time>
-        </div>
-        <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/19/news064.html" target="_blank" rel="noopener">楽天モバイル、Apple Watchが最大15％オフになる期間限定クーポン進呈 「Apple Watch Series 12」も対象</a></h3>
-        <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/19/news064.html" target="_blank" rel="noopener">元記事を読む →</a>
       </article>
       <article class="card" data-category="製品ニュース">
         <div class="card-head">
@@ -782,6 +848,11 @@ footer a { color: var(--accent); }
       </article>
     </section>
     <div class="more-wrap"><button type="button" id="more-news" class="more-btn" hidden>もっと見る（残り <span class="more-count"></span> 件）</button></div>
+    <section class="site-about" aria-label="サイト概要">
+      <p class="tagline">スマホ・パソコン・家電のセールと、買い物に役立つ最新ニュースを毎朝チェック</p>
+      <div class="about" role="note"><strong>セールの見張り番</strong> は、スマホ・パソコン・家電を少しでもお得に買いたい人のために、主要IT・家電メディアのセール情報と買い物に役立つニュースを毎朝自動で集め、編集部のおすすめとあわせてお届けするサイトです。</div>
+      <div class="meta">最終更新: 2026年11月20日 17:25 (JST) ・ 40 件</div>
+    </section>
   </main>
   <footer>
     <div class="container">
