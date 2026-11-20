@@ -204,3 +204,39 @@ def test_no_amazon_associate_claim_while_not_approved():
     html = fb.render_page([], [], [], [])
     assert "Amazonアソシエイト" not in html and "Amazonのアソシエイトとして" not in html
     assert "もしもアフィリエイト経由の楽天市場など" in html
+
+
+def test_discount_and_deadline_parsing(make_item):
+    """見出しの値引き・本文の終わりの日は、書かれているものだけを読み取る（推測で埋めない）。"""
+    assert fb.discount_of("ゲーミングモニターが最大50%オフセール")[:4] == (0, 50, "最大", "50%")
+    assert fb.discount_of("44％オフ！ワイヤレスイヤホン")[:2] == (0, 44)
+    assert fb.discount_of("約2万6千円引き！ミニPC")[:2] == (1, 26000)
+    assert fb.discount_of("電気毛布が1,500円オトク！")[1:] == (1500, "", "1,500円", "オトク")
+    assert fb.discount_of("新製品を発表、価格は3万円") is None
+    assert fb.discount_of("満足度100%のノート") is None
+    today = date(2026, 11, 20)
+    it = make_item("ブラックフライデーがセール", summary="期間は11月20日から11月30日まで。")
+    assert fb.deadline_of(it, today) == date(2026, 11, 30)
+    assert fb.deadline_of(make_item("セール", summary="12月3日(水)まで開催"), today) == date(2026, 12, 3)
+    assert fb.deadline_of(make_item("セール", summary="11月1日まで"), today) is None      # 過ぎた日は出さない
+    assert fb.deadline_of(make_item("セール", summary="1月5日まで"), today) is None       # 遠すぎる日は出さない
+    assert fb.deadline_of(make_item("セール", summary="期間は未定"), today) is None
+
+
+def test_report_orders_by_discount_and_top_page_order(make_item):
+    items = [
+        make_item("ノートPCが3万円引きセール", "https://ex.com/a"),
+        make_item("モニターが最大50%オフ", "https://ex.com/b"),
+        make_item("マウスが20%OFF", "https://ex.com/c"),
+        make_item("SSDが特売セール", "https://ex.com/d"),
+        make_item("新製品発表", "https://ex.com/e"),
+    ]
+    top = [i.link for i, _ in fb.select_report(items)]
+    assert top == ["https://ex.com/b", "https://ex.com/c", "https://ex.com/a"]  # 率の大きい順 → 金額
+    articles = [Article(slug="guide", title="選び方", date=date(2026, 11, 16), description="d", body_html="<p>x</p>")]
+    html = fb.render_page(items, [], [], articles)
+    assert html.index('id="report-title"') < html.index('id="articles-title"') < html.index('id="sale-title"')
+    assert "今日の見張り報告" in html and "セールは <b>4件</b>" in html
+    # 報告で出したセールは、下のセール速報欄に重ねない
+    sale_part = html[html.index('id="sale-title"'):html.index('id="news"')]
+    assert "ex.com/b" not in sale_part and "ex.com/d" in sale_part

@@ -469,6 +469,54 @@ CSS = """
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+/* ===== 黄色の帯と「今日の見張り報告」（2026-11 の作り直し） =====
+   黄色はサイトの顔（帯）にだけ使い、値引きは赤い値札で見せる。ほかは落ち着いた色のまま。 */
+header.band { background: #ffd83d; color: #1c1a17; border-bottom: 3px solid #1c1a17; padding: 12px 0; }
+header.band .container { display: flex; align-items: center; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; }
+header.band h1 { font-size: clamp(1.25rem, 3.6vw, 1.6rem); font-weight: 900; letter-spacing: .03em; }
+header.band .top-nav { margin: 0; justify-content: flex-start; }
+header.band .top-nav a { color: #1c1a17; font-weight: 700; display: inline-flex; align-items: center; min-height: 32px; }
+header.band .top-nav a:hover { color: #1c1a17; }
+.report { margin: 16px 0 28px; display: grid; gap: 12px; }
+.report-card { background: var(--surface); border-radius: 10px; padding: 18px 18px 6px; box-shadow: var(--shadow); max-width: 820px; }
+.report-card h2 { margin: 0; font-size: 1.5rem; font-weight: 900; }
+.report-date { margin: 2px 0 0; font-size: .8rem; font-weight: 700; color: var(--muted); }
+.report .lead { margin: 10px 0 4px; font-size: .98rem; line-height: 1.75; }
+.report .lead b { background: linear-gradient(transparent 58%, rgba(255, 216, 61, .6) 58%); }
+.report-note { margin: 0 0 8px; font-size: .75rem; color: var(--muted); }
+.top-sales { list-style: none; margin: 0; padding: 0; border-top: 2px solid var(--text); }
+.top-sales li { display: grid; grid-template-columns: 68px minmax(0, 1fr); gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: start; }
+.top-sales li:last-child { border-bottom: 0; }
+.top-sales h3 { margin: 0; font-size: .98rem; line-height: 1.5; overflow-wrap: anywhere; }
+.top-sales h3 a { color: var(--text); text-decoration: none; }
+.top-sales h3 a:hover { color: var(--accent); text-decoration: underline; }
+.top-sales .src { font-size: .75rem; color: var(--muted); }
+.badge { display: grid; justify-items: center; background: #c9301e; color: #fff; border-radius: 6px; padding: 6px 2px; line-height: 1.15; font-weight: 900; text-align: center; }
+.badge b { font-size: 1.15rem; white-space: nowrap; }
+.badge small { font-size: .65rem; font-weight: 800; }
+.badge small:empty { display: none; }
+.badge.plain { background: var(--tag-deal); color: var(--tag-deal-text); }
+.badge.plain b { font-size: .9rem; }
+.soon { background: #1c1a17; color: #fff; border-radius: 12px; padding: 12px 16px; max-width: 820px; }
+.soon h2 { margin: 0 0 4px; font-size: 1rem; display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.soon h2 small { font-size: .72rem; font-weight: 600; color: #cfc9bc; }
+.soon ul { list-style: none; margin: 0; padding: 0; }
+.soon li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid #3a3731; font-size: .9rem; }
+.soon a { color: #fff; text-decoration: none; overflow-wrap: anywhere; }
+.soon a:hover { text-decoration: underline; }
+.soon b { color: #ffd83d; white-space: nowrap; }
+.entry { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 820px; }
+.entry a { display: grid; justify-items: center; gap: 2px; background: var(--surface); color: var(--text); border: 2px solid var(--text); border-radius: 12px; padding: 12px 8px; font-weight: 800; text-decoration: none; min-height: 44px; }
+.entry a small { font-weight: 600; font-size: .75rem; color: var(--muted); }
+.entry a:hover { background: var(--bg); }
+.site-about { margin: 8px 0 40px; padding-top: 20px; border-top: 1px solid var(--border); }
+.site-about .tagline { margin: 0 0 4px; color: var(--muted); }
+#report, #articles { scroll-margin-top: 12px; }
+/* ダークモードでは、明るい青の上の白い文字が読みにくいので、文字を濃い色にする */
+@media (prefers-color-scheme: dark) {
+  .filters button[aria-pressed="true"], .card .btn, footer a.contact-btn { color: #0b1320 !important; }
+  .pick-label { color: #ff8a7a !important; }
+}
 body {
   margin: 0; background: var(--bg); color: var(--text); line-height: 1.6;
   font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", Meiryo, sans-serif;
@@ -509,7 +557,7 @@ header p { margin: 6px 0 0; color: var(--muted); }
 .sale-item p { margin: 0; font-size: .8rem; color: var(--muted); overflow-wrap: anywhere; }
 .more-wrap { text-align: center; margin: -16px 0 40px; }
 .sale-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 12px 0 0; }
-.more-link-inline { color: var(--accent); font-size: .9rem; }
+.more-link-inline { color: var(--accent); font-size: .9rem; display: inline-flex; align-items: center; min-height: 32px; }
 .share { display: flex; flex-wrap: wrap; gap: 8px; }
 .share-btn {
   display: inline-flex; align-items: center; padding: 7px 14px; border-radius: 999px;
@@ -862,6 +910,115 @@ def render_share_links(title: str, url: str, x_text: str | None = None) -> str:
     )
 
 
+# ---------------------------------------------------------------------------
+# 今日の見張り報告（トップの一番上）
+# 見出しに書かれた値引き（「最大43%オフ」「3万円引き」）と、本文に書かれた終わりの日（「11月30日まで」）だけを
+# 機械的に読み取る。読み取れないものは推測で埋めない。報告の文はデータを決まった型にはめて作る。
+# ---------------------------------------------------------------------------
+REPORT_TOP_COUNT = 3   # 値引きの大きいセールを何件出すか
+DEADLINE_COUNT = 3     # もうすぐ終わるセールを何件出すか
+DEADLINE_WINDOW_DAYS = 31
+
+_PCT_RE = re.compile(r"(最大)?\s*(\d{1,2})\s*[%％]\s*(オフ|OFF|off|引き|割引)")
+_YEN_RE = re.compile(r"(\d+万\d+千|\d+万|\d+千|\d{1,3}(?:,\d{3})+|\d+)\s*円\s*(引き|オフ|OFF|割引|オトク|お得)")
+_DEADLINE_RE = re.compile(r"(\d{1,2})月(\d{1,2})日(?:\s*[（(][^）)]{1,3}[）)])?(?:\s*\d{1,2}[:：]\d{2})?\s*まで")
+
+
+def _yen_value(text: str) -> int:
+    """「2万6千」「3万」「7千」「1,500」を円の数に直す。"""
+    m = re.fullmatch(r"(?:(\d+)万)?(?:(\d+)千)?", text)
+    if m and (m.group(1) or m.group(2)):
+        return int(m.group(1) or 0) * 10000 + int(m.group(2) or 0) * 1000
+    return int(text.replace(",", ""))
+
+
+def discount_of(title: str) -> tuple[int, int, str, str, str] | None:
+    """見出しから値引きを読む。(種類 0=率 1=金額, 大きさ, 上の小さな字, 大きな字, 下の小さな字) を返す。"""
+    m = _PCT_RE.search(title)
+    if m and 1 <= int(m.group(2)) <= 99:
+        return (0, int(m.group(2)), m.group(1) or "", f"{int(m.group(2))}%", "オフ")
+    m = _YEN_RE.search(title)
+    if m:
+        value = _yen_value(m.group(1))
+        if value >= 100:
+            word = {"OFF": "オフ", "割引": "引き", "お得": "オトク"}.get(m.group(2), m.group(2))
+            return (1, value, "", f"{m.group(1)}円", word)
+    return None
+
+
+def deadline_of(item: Item, today) -> "date | None":
+    """見出し・本文に「11月30日まで」とあれば、その日付（今日〜31日先のものだけ）を返す。"""
+    m = _DEADLINE_RE.search(f"{item.title} {item.summary}")
+    if not m:
+        return None
+    month, day = int(m.group(1)), int(m.group(2))
+    year = today.year + (1 if month < today.month - 6 else 0)
+    try:
+        d = today.replace(year=year, month=month, day=day)
+    except ValueError:
+        return None
+    return d if 0 <= (d - today).days <= DEADLINE_WINDOW_DAYS else None
+
+
+def select_report(items: list[Item]) -> list[tuple[Item, tuple | None]]:
+    """値引きの読み取れたセールを、率（大きい順）→ 金額（大きい順）で並べ、足りなければ新しいセールで埋める。"""
+    sales = [i for i in items if i.link and is_sale_title(i.title)]
+    with_d = [(i, discount_of(i.title)) for i in sales]
+    ranked = sorted([x for x in with_d if x[1]], key=lambda x: (x[1][0], -x[1][1]))
+    rest = [x for x in with_d if not x[1]]
+    return (ranked + rest)[:REPORT_TOP_COUNT]
+
+
+def render_report(items: list[Item]) -> tuple[str, set[str]]:
+    """トップの「今日の見張り報告」。表示したセールのリンクも返す（下のセール速報欄で重ねないため）。"""
+    e = html.escape
+    now = datetime.now(JST)
+    today = now.date()
+    sales = [i for i in items if is_sale_title(i.title)]
+    if not sales:
+        return "", set()
+    found_today = sum(1 for i in sales if i.published and i.published.astimezone(JST).date() == today)
+    lead = f"見張っているニュース {len(items)}件のうち、セールは <b>{len(sales)}件</b>"
+    lead += f"（今日見つかったもの {found_today}件）でした。" if found_today else "でした。"
+    tops = select_report(items)
+    rows = []
+    for i, d in tops:
+        if d:
+            badge = f'<span class="badge"><small>{e(d[2])}</small><b>{e(d[3])}</b><small>{e(d[4])}</small></span>'
+        else:
+            badge = f'<span class="badge plain"><b>{SALE_LABEL}</b></span>'
+        rows.append(f"""
+        <li>{badge}<div><h3>{render_title_link(i.title, i.link)}</h3><span class="src">{e(i.source)}</span></div></li>""")
+    soon = sorted(((deadline_of(i, today), i) for i in sales if i.link), key=lambda x: (x[0] is None, x[0] or today))
+    soon = [(d, i) for d, i in soon if d][:DEADLINE_COUNT]
+    soon_html = ""
+    if soon:
+        soon_rows = "".join(
+            f'<li><a href="{e(i.link)}" target="_blank" rel="noopener">{e(i.title)}</a><b>{d.month}/{d.day}まで</b></li>' for d, i in soon
+        )
+        soon_html = f"""
+      <div class="soon">
+        <h2>もうすぐ終わるセール<small>記事に期限が書かれているものだけ</small></h2>
+        <ul>{soon_rows}</ul>
+      </div>"""
+    html_out = f"""
+    <section class="report" id="report" aria-labelledby="report-title">
+      <div class="report-card">
+        <h2 id="report-title">今日の見張り報告</h2>
+        <p class="report-date">{now.strftime("%Y年%m月%d日 %H:%M")} 時点</p>
+        <p class="lead">{lead}</p>
+        <p class="report-note">値引きの大きい順（見出しに書かれた値引き率・金額で比べています。価格は掲載時点のものです）</p>
+        <ul class="top-sales">{"".join(rows)}
+        </ul>
+      </div>{soon_html}
+      <div class="entry">
+        <a href="#sale">セールをすべて見る<small>{len(sales)}件</small></a>
+        <a href="#articles">選び方の記事<small>編集部が解説</small></a>
+      </div>
+    </section>"""
+    return html_out, {i.link for i, _ in tops}
+
+
 def render_sale_section(items: list[Item], exclude_links: set[str]) -> str:
     """タイトルにセール関連の語を含む最新ニュースを、トップページ上部にまとめて表示する。"""
     e = html.escape
@@ -1174,27 +1331,33 @@ def render_page(
     articles = articles or []
     # 自動ピックアップに出した記事は、セール速報欄に重ねて出さない
     picked_links = {p.url for p in (picks or []) if not p.manual}
-    sale_section = render_sale_section(items, picked_links)
+    report_html, report_links = render_report(items)
+    # 報告に出したセールは下のセール速報欄に重ねない。ただし、それで速報欄が空になるときは重ねて出す
+    sale_section = render_sale_section(items, picked_links | report_links) or render_sale_section(items, picked_links)
     news_heading = '\n    <h2 class="section-title" id="news">最新ニュース</h2>'
     about_html = e(SITE_ABOUT).replace(e(SITE_TITLE), "<strong>" + e(SITE_TITLE) + "</strong>", 1)
     # 自分で書いた記事（選び方・比較）がサイトの中心なので、ナビの先頭に置く（SEO の点検 2026-11-19）
     nav_links = ([("#articles", "選び方の記事")] if articles else []) + ([('#sale', 'セール速報')] if sale_section else []) + [("#news", "ニュース"), ("/articles/", "記事一覧")]
     top_nav = "".join(f'<a href="{href}">{label}</a>' for href, label in nav_links)
+    # 上は黄色の帯（サイト名・メニュー）だけにして、すぐ「今日の見張り報告」を見せる。サイトの説明はページの下へ
     header_html = f"""
-  <header>
+  <header class="band">
     <div class="container">
-      <nav class="top-nav" aria-label="サイト内">{top_nav}</nav>
       <h1>{e(SITE_TITLE)}</h1>
-      <p>{e(SITE_DESCRIPTION)}</p>
-      <div class="about" role="note" aria-label="サイト概要">{about_html}</div>
-      <div class="meta">最終更新: {now} (JST) ・ {len(items)} 件</div>
+      <nav class="top-nav" aria-label="サイト内">{top_nav}</nav>
     </div>
   </header>"""
-    main_html = f"""{render_article_section(articles)}{render_picks(picks or [])}{sale_section}{render_rankings(rankings or [])}{news_heading}
+    about_section = f"""
+    <section class="site-about" aria-label="サイト概要">
+      <p class="tagline">{e(SITE_DESCRIPTION)}</p>
+      <div class="about" role="note">{about_html}</div>
+      <div class="meta">最終更新: {now} (JST) ・ {len(items)} 件</div>
+    </section>"""
+    main_html = f"""{report_html}{render_article_section(articles)}{render_picks(picks or [])}{sale_section}{render_rankings(rankings or [])}{news_heading}
     <nav class="filters" aria-label="カテゴリ絞り込み">{filter_buttons}</nav>
     <section class="grid" aria-labelledby="news">{cards}
     </section>
-    <div class="more-wrap"><button type="button" id="more-news" class="more-btn" hidden>もっと見る（残り <span class="more-count"></span> 件）</button></div>"""
+    <div class="more-wrap"><button type="button" id="more-news" class="more-btn" hidden>もっと見る（残り <span class="more-count"></span> 件）</button></div>{about_section}"""
     return render_document(
         title=f"{SITE_TITLE} | {SITE_DESCRIPTION}",
         description=SITE_ABOUT,
