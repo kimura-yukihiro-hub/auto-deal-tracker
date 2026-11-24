@@ -338,13 +338,28 @@ footer a { color: var(--accent); }
   background: var(--accent); color: #fff !important; text-decoration: none;
 }
 .contact-btn:hover { background: var(--accent-hover); }
+/* ===== 記事ページ・記事一覧も、トップと同じ黄色の帯と黒の線にそろえる（2026-11-24） ===== */
+header.band.site-header { padding: 12px 0; }
+header.band .site-name { color: #1c1a17; font-weight: 900; font-size: clamp(1.15rem, 3.4vw, 1.45rem); letter-spacing: .03em; text-decoration: none; }
+.post { border: 0; border-radius: 10px; }
+.post-header h1 { font-weight: 900; }
+.post-header { border-bottom: 2px solid var(--text); padding-bottom: 14px; }
+.post-tags .tag, .article-card .tag { background: #fff4c2; color: #1c1a17; }
+.prose h2 { font-weight: 900; border-bottom: 2px solid var(--text); }
+.prose h3 { padding-left: 10px; border-left: 5px solid #ffd83d; }
+.prose th { background: #fff4c2; color: #1c1a17; }
+/* 表の中では、数字や「約62,900円」を途中で折り返さない（はみ出したら横にずらして読む） */
+.prose table { overflow-wrap: normal; }
+.prose td, .prose th { overflow-wrap: break-word; word-break: normal; }
+.page-title { font-weight: 900; }
+.article-card { border-left-color: #1c1a17; }
 </style>
 </head>
 <body>
-  <header class="site-header">
+  <header class="band site-header">
     <div class="container">
       <a class="site-name" href="/">セールの見張り番</a>
-      <nav class="site-nav" aria-label="サイト内"><a href="/">トップ</a><a href="/articles/">記事一覧</a></nav>
+      <nav class="top-nav" aria-label="サイト内"><a href="/">今日の見張り報告</a><a href="/articles/">記事一覧</a></nav>
     </div>
   </header>
   <main class="container">

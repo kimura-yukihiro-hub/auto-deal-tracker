@@ -337,6 +337,21 @@ footer a { color: var(--accent); }
   background: var(--accent); color: #fff !important; text-decoration: none;
 }
 .contact-btn:hover { background: var(--accent-hover); }
+/* ===== 記事ページ・記事一覧も、トップと同じ黄色の帯と黒の線にそろえる（2026-11-24） ===== */
+header.band.site-header { padding: 12px 0; }
+header.band .site-name { color: #1c1a17; font-weight: 900; font-size: clamp(1.15rem, 3.4vw, 1.45rem); letter-spacing: .03em; text-decoration: none; }
+.post { border: 0; border-radius: 10px; }
+.post-header h1 { font-weight: 900; }
+.post-header { border-bottom: 2px solid var(--text); padding-bottom: 14px; }
+.post-tags .tag, .article-card .tag { background: #fff4c2; color: #1c1a17; }
+.prose h2 { font-weight: 900; border-bottom: 2px solid var(--text); }
+.prose h3 { padding-left: 10px; border-left: 5px solid #ffd83d; }
+.prose th { background: #fff4c2; color: #1c1a17; }
+/* 表の中では、数字や「約62,900円」を途中で折り返さない（はみ出したら横にずらして読む） */
+.prose table { overflow-wrap: normal; }
+.prose td, .prose th { overflow-wrap: break-word; word-break: normal; }
+.page-title { font-weight: 900; }
+.article-card { border-left-color: #1c1a17; }
 </style>
 </head>
 <body>
@@ -350,7 +365,7 @@ footer a { color: var(--accent); }
     <section class="report" id="report" aria-labelledby="report-title">
       <div class="report-card">
         <h2 id="report-title">今日の見張り報告</h2>
-        <p class="report-date">2026年11月24日 14:03 時点</p>
+        <p class="report-date">2026年11月24日 14:11 時点</p>
         <p class="lead">見張っているニュース 40件のうち、セールは <b>6件</b>（今日見つかったもの 6件）でした。</p>
         <p class="report-note">値引きの大きい順（見出しに書かれた値引き率・金額で比べています。価格は掲載時点のものです）</p>
         <ul class="top-sales">
@@ -491,6 +506,15 @@ footer a { color: var(--accent); }
         </div>
         <h3><a href="https://www.gizmodo.jp/article/2611-twin-lens-style-digital-camera/" target="_blank" rel="noopener">令和によみがえる二眼レフスタイル。上から覗いて撮るデジカメが楽しそう</a></h3>
         <a class="btn" href="https://www.gizmodo.jp/article/2611-twin-lens-style-digital-camera/" target="_blank" rel="noopener">元記事を読む →</a>
+      </article>
+      <article class="card" data-category="製品ニュース">
+        <div class="card-head">
+          <span class="tag">製品ニュース</span>
+          <span>ITmedia Mobile</span>
+          <time datetime="2026-11-24T13:25:00+09:00">2026/11/24 13:25</time>
+        </div>
+        <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/24/news058.html" target="_blank" rel="noopener">“つながらないストレス”、povoで解消しませんか？ KDDIが街中で攻勢かけるワケ</a></h3>
+        <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/24/news058.html" target="_blank" rel="noopener">元記事を読む →</a>
       </article>
       <article class="card" data-category="製品ニュース">
         <div class="card-head">
@@ -789,15 +813,6 @@ footer a { color: var(--accent); }
         <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/23/news006.html" target="_blank" rel="noopener">iPhone DuoとGalaxy Z Fold8で「サイゼリヤの注文画面」を開いて分かった意外な事実 折りたたみならではの活用法も</a></h3>
         <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/23/news006.html" target="_blank" rel="noopener">元記事を読む →</a>
       </article>
-      <article class="card" data-category="製品ニュース">
-        <div class="card-head">
-          <span class="tag">製品ニュース</span>
-          <span>ITmedia Mobile</span>
-          <time datetime="2026-11-23T11:00:00+09:00">2026/11/23 11:00</time>
-        </div>
-        <h3><a href="https://www.itmedia.co.jp/mobile/articles/2611/23/news005.html" target="_blank" rel="noopener">なぜ駅の改札機で混乱？ Suica、クレカ、QRコードの集約で「立ち止まらない快適さ」を奪う理由</a></h3>
-        <a class="btn" href="https://www.itmedia.co.jp/mobile/articles/2611/23/news005.html" target="_blank" rel="noopener">元記事を読む →</a>
-      </article>
       <article class="card" data-category="IT・ネット">
         <div class="card-head">
           <span class="tag">IT・ネット</span>
@@ -839,7 +854,7 @@ footer a { color: var(--accent); }
     <section class="site-about" aria-label="サイト概要">
       <p class="tagline">スマホ・パソコン・家電のセールと、買い物に役立つ最新ニュースを毎朝チェック</p>
       <div class="about" role="note"><strong>セールの見張り番</strong> は、スマホ・パソコン・家電を少しでもお得に買いたい人のために、主要IT・家電メディアのセール情報と買い物に役立つニュースを毎朝自動で集め、編集部のおすすめとあわせてお届けするサイトです。</div>
-      <div class="meta">最終更新: 2026年11月24日 14:03 (JST) ・ 40 件</div>
+      <div class="meta">最終更新: 2026年11月24日 14:11 (JST) ・ 40 件</div>
     </section>
   </main>
   <footer>
