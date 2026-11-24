@@ -5,8 +5,15 @@
     <link>https://auto-deal-tracker.pages.dev/</link>
     <description>スマホ・パソコン・家電のセールと、買い物に役立つ最新ニュースを毎朝チェック</description>
     <language>ja</language>
-    <lastBuildDate>Sun, 22 Nov 2026 07:00:00 +0900</lastBuildDate>
+    <lastBuildDate>Tue, 24 Nov 2026 07:00:00 +0900</lastBuildDate>
     <atom:link href="https://auto-deal-tracker.pages.dev/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>ミニPC選びで後悔しないために｜買う前の4つのチェック</title>
+      <link>https://auto-deal-tracker.pages.dev/articles/mini-pc-guide/</link>
+      <guid isPermaLink="true">https://auto-deal-tracker.pages.dev/articles/mini-pc-guide/</guid>
+      <pubDate>Tue, 24 Nov 2026 07:00:00 +0900</pubDate>
+      <description>場所を取らずに設置できるミニPCですが、用途に合わない性能を選ぶと動作の重さや発熱に悩むことも。仕事や普段使いで失敗しないための選び方と、買う前に確認すべき注意点をわかりやすく解説します。</description>
+    </item>
     <item>
       <title>今週のセール・値下げ情報まとめ（11/19〜11/22）</title>
       <link>https://auto-deal-tracker.pages.dev/articles/weekly-deals-2026-11-22/</link>
