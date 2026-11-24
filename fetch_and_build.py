@@ -776,6 +776,14 @@ header.band .site-name { color: #1c1a17; font-weight: 900; font-size: clamp(1.15
   .entry { grid-template-columns: 1fr; }
 }
 .report .summary { margin: 12px 0 0; padding: 10px 12px; background: #fff8d6; border-left: 5px solid #ffd83d; border-radius: 6px; font-size: .95rem; line-height: 1.75; color: #1c1a17; }
+/* ページを移るときの切り替え（View Transitions、ブラウザの標準機能）。黄色の帯はその場に残って見える。
+   対応していないブラウザではふつうに切り替わるだけ。「視差効果を減らす」設定の人には使わない（2026-11-24） */
+@view-transition { navigation: auto; }
+header.band { view-transition-name: band; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .22s; }
+@media (prefers-reduced-motion: reduce) {
+  @view-transition { navigation: none; }
+}
 """
 
 # 値札アイコンのファビコン（外部ファイル不要のインライン SVG）
