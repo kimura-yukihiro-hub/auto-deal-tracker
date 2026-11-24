@@ -1,6 +1,7 @@
 ---
 title: ワイヤレスイヤホンの選び方｜通勤・在宅ワーク・運動別のおすすめ
 date: 2026-11-17
+updated: 2026-11-24
 description: ワイヤレスイヤホンの選び方を、詳しくない人にもわかるようにまとめました。使い方別・予算別のおすすめ早見表と、耳に入れる形の違い、ノイズキャンセリングと外音取り込み、電池の持ち、通話やWeb会議で使うときのマイク、iPhone・Android との相性、買う前のチェックポイントを解説します。
 tags: ワイヤレスイヤホン, 選び方, スマホ, オーディオ
 ---
@@ -22,7 +23,7 @@ tags: ワイヤレスイヤホン, 選び方, スマホ, オーディオ
 | とにかく安く、でもノイズキャンセリングは欲しい | [Anker Soundcore P31i](https://item.rakuten.co.jp/anker/d1202/) | 約6,000円 |
 | 電車通勤と在宅ワークの両方で使いたい | [ソニー WF-C710N](https://item.rakuten.co.jp/e-earphone/sony-wfc710n/) | 約16,000円 |
 | ランニングや家事をしながら聞きたい | [Anker Soundcore AeroFit 2](https://item.rakuten.co.jp/anker/a3874/) | 約17,000円 |
-| iPhone を使っている | [AirPods 4](https://item.rakuten.co.jp/rakutenmobile-store/apple-rm2409011/) / [AirPods Pro 3](https://item.rakuten.co.jp/rakutenmobile-store/apple-rm2509012/) | 約24,000〜43,000円 |
+| iPhone を使っている | [AirPods 5](https://www.apple.com/jp/airpods-5/) / [AirPods Pro 3](https://www.apple.com/jp/airpods-pro/) | 約23,800〜42,800円（Apple 公式、11月24日時点） |
 
 価格は2026年11月17日に楽天市場で確認したものです。セールやポイントで変わるので、購入前にリンク先で確認してください。
 
@@ -174,11 +175,10 @@ tags: ワイヤレスイヤホン, 選び方, スマホ, オーディオ
 
 ### iPhone を使っているなら：AirPods
 
-<img src="https://shop.r10s.jp/rakutenmobile-store/cabinet/item/apple-rm2509012/main_2606.jpg" alt="Apple AirPods Pro 3" width="160" loading="lazy">
+- **[AirPods 5（Apple 公式サイト）](https://www.apple.com/jp/airpods-5/)**：23,800円。ワイヤレス充電ケース付きは27,800円。2026年11月時点の、いちばん新しい AirPods
+- **[AirPods Pro 3（Apple 公式サイト）](https://www.apple.com/jp/airpods-pro/)**：42,800円。カナル型で、ノイズキャンセリングをいちばん重視したい人に
 
-- **[AirPods 4（楽天市場・楽天モバイル公式）](https://item.rakuten.co.jp/rakutenmobile-store/apple-rm2409011/)**：23,800円。耳の入り口にのせるインナーイヤー型で、圧迫感が少ない
-- **[AirPods 4 アクティブノイズキャンセリング搭載（楽天市場・楽天モバイル公式）](https://item.rakuten.co.jp/rakutenmobile-store/apple-rm2409012/)**：32,800円。インナーイヤー型のまま、ノイズキャンセリングも欲しい人に
-- **[AirPods Pro 3（楽天市場・楽天モバイル公式）](https://item.rakuten.co.jp/rakutenmobile-store/apple-rm2509012/)**：42,799円。カナル型で、ノイズキャンセリングをいちばん重視したい人に
+価格は2026年11月24日に Apple 公式サイトで確認したものです。楽天市場の公式店（楽天モバイル公式）での取り扱いがなくなったため、Apple 公式サイトへのリンクにしています。
 
 iPhone とのつながりやすさ、「探す」アプリで場所がわかる安心感は、AirPods ならではです。
 
