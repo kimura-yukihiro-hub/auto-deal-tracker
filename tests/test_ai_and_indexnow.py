@@ -245,3 +245,18 @@ def test_price_check_pairs_one_link_and_one_price_per_line():
             "おすすめ：[B](https://item.rakuten.co.jp/shop/b/)　約74,900円（11月24日時点）\n"
             "[C](https://item.rakuten.co.jp/shop/c/) と [D](https://item.rakuten.co.jp/shop/d/) は 1,000円\n")
     assert pairs_in(text) == [("https://item.rakuten.co.jp/shop/a/", 62900), ("https://item.rakuten.co.jp/shop/b/", 74900)]
+
+
+def test_price_check_other_links_skip_news_and_report_gone(tmp_path, monkeypatch):
+    import price_check
+    art = tmp_path / "guide.md"
+    art.write_text("[ニュース](https://pc.watch.impress.co.jp/x)\n"
+                   "[AirPods](https://www.apple.com/jp/airpods-5/)\n"
+                   "[済み](https://item.rakuten.co.jp/shop/a/)\n"
+                   '<img src="https://shop.r10s.jp/shop/a.jpg" alt="a">\n', encoding="utf-8")
+    asked = []
+    monkeypatch.setattr(price_check.time, "sleep", lambda s: None)
+    monkeypatch.setattr(price_check, "link_state", lambda u: asked.append(u) or ("gone" if "apple" in u else "ok"))
+    lines = price_check.other_links(art, {"https://item.rakuten.co.jp/shop/a/"})
+    assert asked == ["https://www.apple.com/jp/airpods-5/", "https://shop.r10s.jp/shop/a.jpg"]
+    assert len(lines) == 1 and "リンクの先がなくなっています" in lines[0] and "apple.com" in lines[0]
