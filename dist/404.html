@@ -353,6 +353,13 @@ header.band .site-name { color: #1c1a17; font-weight: 900; font-size: clamp(1.15
 .prose td, .prose th { overflow-wrap: break-word; word-break: normal; }
 .page-title { font-weight: 900; }
 .article-card { border-left-color: #1c1a17; }
+/* パソコンの幅では、「今日の見張り報告」を左、「もうすぐ終わるセール」と入口のボタンを右に並べ、右の空きをなくす（2026-11-24） */
+@media (min-width: 960px) {
+  .report { grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); grid-template-rows: auto 1fr; align-items: start; }
+  .report-card { grid-column: 1; grid-row: 1 / span 2; max-width: none; }
+  .soon, .entry { grid-column: 2; max-width: none; }
+  .entry { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
