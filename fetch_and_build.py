@@ -780,7 +780,7 @@ header.band .site-name { color: #1c1a17; font-weight: 900; font-size: clamp(1.15
    対応していないブラウザではふつうに切り替わるだけ。「視差効果を減らす」設定の人には使わない（2026-11-24） */
 @view-transition { navigation: auto; }
 header.band { view-transition-name: band; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: .22s; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .35s; }
 @media (prefers-reduced-motion: reduce) {
   @view-transition { navigation: none; }
 }
