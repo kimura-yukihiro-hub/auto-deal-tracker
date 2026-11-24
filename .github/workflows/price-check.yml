@@ -1,0 +1,27 @@
+# 毎月 1 日の朝、記事に書いた楽天の商品の価格が今と大きく違っていないかを確かめ、違えば Issue で知らせる（記事は書き換えない）
+name: Price check
+
+on:
+  schedule:
+    - cron: "30 0 1 * *" # 毎月 1 日 日本時間 9:30
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Check prices
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python price_check.py

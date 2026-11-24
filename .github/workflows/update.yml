@@ -23,6 +23,7 @@ on:
       - "og_image.py"
       - "affiliate.py"
       - "digest.py"
+      - "daily_summary.py"
       - "ai_draft.py"
       - "articles/**" # 記事を追加・編集したらすぐ公開する
       - "requirements.txt"
@@ -76,6 +77,7 @@ jobs:
           RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
           RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
           RAKUTEN_SITE_URL: ${{ secrets.RAKUTEN_SITE_URL }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} # トップの今日のまとめ文（1 日 1 回）
         run: python fetch_and_build.py
 
       - name: Create AI draft (Sundays)
@@ -99,6 +101,7 @@ jobs:
           # dist/: 公開ページ / articles/: 自動作成した週刊まとめ記事 / data/deals_log.json: セール記事の記録
           # data/ai_draft_history.json: AI 下書きの型の履歴（同じ型が続かないように）
           git add dist/ articles/ data/deals_log.json
+          [ -f data/daily_summary.json ] && git add data/daily_summary.json
           [ -f data/ai_draft_history.json ] && git add data/ai_draft_history.json
           # data/short_links.json: 楽天アプリの短いリンクを元の URL に戻した結果（毎回問い合わせないため）
           [ -f data/short_links.json ] && git add data/short_links.json

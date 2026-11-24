@@ -216,3 +216,32 @@ def test_ai_phrases_found_outside_code():
     assert found_ai_phrases(body) == ["言語化する", "総じて"]
     assert "「言語化する」" in ai_phrase_problem(body)
     assert ai_phrase_problem("ふつうの文です。") is None
+
+
+def test_daily_summary_check_rejects_unsupported_numbers_and_hype():
+    from daily_summary import check
+    sales = [{"title": "ルンバが10万円引き Amazonセール中", "source": "PC Watch"},
+             {"title": "OPPOスマホ4機種が2万円～3万円オフ", "source": "ITmedia Mobile"}]
+    ok = "今日はロボット掃除機やスマホの値下げが目立ちます。ルンバは10万円引き、OPPOのスマホは2万円～3万円オフと報じられています。"
+    assert check(ok, sales) is None
+    assert "数字" in check("今日はスマホの値下げが多く、最大50%オフのものもあります。ほかにも掃除機のセールがあります。", sales)
+    assert "あおる" in check("今日は見逃せないセールが多い日です。ロボット掃除機とスマホの値下げが目立ちます。ぜひどうぞ。", sales)
+    assert "長さ" in check("短い。", sales)
+
+
+def test_related_articles_prefer_shared_tags():
+    from datetime import date
+    from articles import Article
+    from fetch_and_build import related_articles
+    mk = lambda slug, tags, d: Article(slug=slug, title=slug, date=date(2026, 11, d), description="", body_html="", tags=tags)
+    me = mk("mini-pc", ["ミニPC", "パソコン", "選び方"], 24)
+    arts = [me, mk("weekly", ["セールまとめ", "週刊"], 23), mk("vacuum", ["掃除機", "選び方"], 22), mk("laptop", ["ノートパソコン", "パソコン", "選び方"], 10)]
+    assert [a.slug for a in related_articles(me, arts)] == ["laptop", "weekly", "vacuum"]
+
+
+def test_price_check_pairs_one_link_and_one_price_per_line():
+    from price_check import pairs_in
+    text = ("| 書類向け | [A](https://item.rakuten.co.jp/shop/a/) | 約62,900円 |\n"
+            "おすすめ：[B](https://item.rakuten.co.jp/shop/b/)　約74,900円（11月24日時点）\n"
+            "[C](https://item.rakuten.co.jp/shop/c/) と [D](https://item.rakuten.co.jp/shop/d/) は 1,000円\n")
+    assert pairs_in(text) == [("https://item.rakuten.co.jp/shop/a/", 62900), ("https://item.rakuten.co.jp/shop/b/", 74900)]

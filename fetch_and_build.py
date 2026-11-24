@@ -775,6 +775,7 @@ header.band .site-name { color: #1c1a17; font-weight: 900; font-size: clamp(1.15
   .soon, .entry { grid-column: 2; max-width: none; }
   .entry { grid-template-columns: 1fr; }
 }
+.report .summary { margin: 12px 0 0; padding: 10px 12px; background: #fff8d6; border-left: 5px solid #ffd83d; border-radius: 6px; font-size: .95rem; line-height: 1.75; color: #1c1a17; }
 """
 
 # 値札アイコンのファビコン（外部ファイル不要のインライン SVG）
@@ -991,7 +992,13 @@ def select_report(items: list[Item]) -> list[tuple[Item, tuple | None]]:
     return (ranked + rest)[:REPORT_TOP_COUNT]
 
 
-def render_report(items: list[Item]) -> tuple[str, set[str]]:
+def select_sales_for_summary(items: list[Item]) -> list[Item]:
+    """まとめ文の材料：値引きの読み取れるセールを先に、新しい順で。"""
+    sales = [i for i in items if i.link and is_sale_title(i.title)]
+    return [i for i, _ in sorted(((i, discount_of(i.title)) for i in sales), key=lambda x: x[1] is None)]
+
+
+def render_report(items: list[Item], summary: str = "") -> tuple[str, set[str]]:
     """トップの「今日の見張り報告」。表示したセールのリンクも返す（下のセール速報欄で重ねないため）。"""
     e = html.escape
     now = datetime.now(JST)
@@ -1028,6 +1035,7 @@ def render_report(items: list[Item]) -> tuple[str, set[str]]:
       <div class="report-card">
         <h2 id="report-title">今日の見張り報告</h2>
         <p class="report-date">{now.strftime("%Y年%m月%d日 %H:%M")} 時点</p>
+        {f'<p class="summary">{e(summary)}</p>' if summary else ""}
         <p class="lead">{lead}</p>
         <p class="report-note">値引きの大きい順（見出しに書かれた値引き率・金額で比べています。価格は掲載時点のものです）</p>
         <ul class="top-sales">{"".join(rows)}
@@ -1334,6 +1342,7 @@ def render_page(
     rankings: list[tuple[str, list[Product]]] | None = None,
     picks: list[Pick] | None = None,
     articles: list[Article] | None = None,
+    summary: str = "",
 ) -> str:
     e = html.escape
     now = datetime.now(JST).strftime("%Y年%m月%d日 %H:%M")
@@ -1353,7 +1362,7 @@ def render_page(
     articles = articles or []
     # 自動ピックアップに出した記事は、セール速報欄に重ねて出さない
     picked_links = {p.url for p in (picks or []) if not p.manual}
-    report_html, report_links = render_report(items)
+    report_html, report_links = render_report(items, summary)
     # 報告に出したセールは下のセール速報欄に重ねない。ただし、それで速報欄が空になるときは重ねて出す
     sale_section = render_sale_section(items, picked_links | report_links) or render_sale_section(items, picked_links)
     news_heading = '\n    <h2 class="section-title" id="news">最新ニュース</h2>'
@@ -1399,6 +1408,18 @@ def render_page(
     )
 
 
+RELATED_COUNT = 3
+DIGEST_TAGS = {"セールまとめ", "週刊", "選び方"}   # 週のまとめや、ほぼ全部の記事に付くタグは、関係の深さの計算で数えない
+
+
+def related_articles(a: Article, articles: list[Article], count: int = RELATED_COUNT) -> list[Article]:
+    """記事の下の「ほかの記事」。同じタグが多い記事を先に、同じなら新しい順。足りなければ新しい記事で埋める。"""
+    mine = set(a.tags) - DIGEST_TAGS
+    others = [x for x in articles if x.slug != a.slug]
+    scored = sorted(others, key=lambda x: (-len(mine & (set(x.tags) - DIGEST_TAGS)), -x.date.toordinal()))
+    return scored[:count]
+
+
 def render_article_page(a: Article, articles: list[Article]) -> str:
     e = html.escape
     tags = "".join(f'<span class="tag">{e(t)}</span>' for t in a.tags)
@@ -1410,7 +1431,7 @@ def render_article_page(a: Article, articles: list[Article]) -> str:
         '<p class="pr-note"><span class="pr">PR</span> この記事にはアフィリエイト広告（楽天市場へのリンク）が含まれています。</p>'
         if a.has_affiliate else ""
     )
-    others = [x for x in articles if x.slug != a.slug][:3]
+    others = related_articles(a, articles)
     related = (
         f"""
       <section class="related" aria-labelledby="related-title">
@@ -1650,7 +1671,10 @@ def main() -> int:
         gh_annotate("warning", "記事の書き残し", unfinished)
         print(f"[WARN] {unfinished}", file=sys.stderr)
     print(f"[INFO] 独自記事: {len(articles)} 件")
-    OUTPUT_PATH.write_text(render_page(items, rankings, picks, articles), encoding="utf-8")
+    # 今日のセールの傾向のまとめ文（1 日 1 回 Gemini で作る。作れなければ載せない）
+    from daily_summary import get_summary
+    summary = get_summary([{"title": i.title, "source": i.source} for i in select_sales_for_summary(items)])
+    OUTPUT_PATH.write_text(render_page(items, rankings, picks, articles, summary), encoding="utf-8")
     write_article_pages(articles)
     (OUTPUT_PATH.parent / "404.html").write_text(render_not_found_page(), encoding="utf-8")
     write_seo_files(articles)
